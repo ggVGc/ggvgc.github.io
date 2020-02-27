@@ -34,19 +34,19 @@ function loadContent()
 
 window.onload = function() {
 	// Hide buttons on fullscreen
-	var btn_load = document.getElementById('load');
-	var btn_file = document.getElementById('file');
+	// var btn_load = document.getElementById('load');
+	// var btn_file = document.getElementById('file');
 
 	window.addEventListener('resize', function(event){
 		if (!window.screenTop && !window.screenY) 
 		{
-		  btn_load.style.display = "none";
-			btn_file.style.display = "none";
+			// btn_load.style.display = "none";
+			// btn_file.style.display = "none";
 		}
 		else
 		{
-			btn_load.style.display = "inline";
-			btn_file.style.display = "inline";
+			// btn_load.style.display = "inline";
+			// btn_file.style.display = "inline";
 		}
 	});
 };
