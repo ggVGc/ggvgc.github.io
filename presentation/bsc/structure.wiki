@@ -1,0 +1,23 @@
+
+- Personal intro:
+  - Who am I?
+  - What have I done and whom did I do it with?
+  - Mention supervisors and thank for opportunity
+
+- Short project intro:
+  - Extension of experimental technique
+  - Make more out of simpler tool
+  - Mention of the two categories of samples: Inhomogeneous and "small spot"
+  - Two experimental techniques which are spot focused, which we will raster.
+
+- Description of LEED and photoemission spectroscopy (ARPES, XPS):
+  - Include basic equations
+  - Add figure for 2D LEED case, if time available
+
+- Introduce samples and why they're interesting:
+  - Spend most time on SiC-on-TaC
+
+- Quick mention of Bloch and the endstation and current capabilities
+- Mention previous work with raster ARPES/XPS raster scanning
+- 
+- 
