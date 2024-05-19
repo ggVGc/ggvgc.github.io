@@ -92,9 +92,12 @@ img {
 
 img[alt=front] { width: 50%; }
 img[alt=logo] { width: 80%; }
-img[alt=setup_1] { width: 100%; }
-img[alt=schlieren] { width: 100%; }
-img[alt=schlieren3] { width: 70%; }
+img[alt=hedgehog] { width: 60%; }
+img[alt=sic_inhomogeneous] { width: 90%; }
+img[alt=sic_sharpness] { width: 90%; }
+img[alt=small_fine_mdc_sharpness] { width: 90%; }
+img[alt=small_fine_mdc_sharpness_2] { width: 90%; }
+img[alt=tac_binding_energy] { width: 90%; }
 .cols {
   display: flex;
 }
