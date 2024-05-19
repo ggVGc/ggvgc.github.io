@@ -9,8 +9,39 @@
     <textarea id="source">
 
 class: center, first-page
-# LEED stuff!
-The math is $\alpha+\beta$. 
+## Getting more from LEED:
+### The implementation and possibilities of spatially resolved mapping
+.center[![sic_inhomogeneous_front](./images/gen/sic_inhomogeneous.jpg)]
+---
+
+$a \sin{\theta } = n \lambda$
+
+$\lambda  = \frac{h}{p}$
+
+
+$a \sin{\theta } = n \frac{2\pi }{k\_0}$
+
+$k\_0 \sin{\theta } = \Delta  k\_{||} = n \frac{2\pi }{a}$
+
+---
+
+$$
+\begin{align}
+& \boldsymbol{a}^\* = \frac{2\pi }{\boldsymbol{a}}                     \\\\
+& \boldsymbol{b}^\* = \frac{2\pi }{\boldsymbol{b}}                     \\\\
+& \boldsymbol{a} \cdot  \boldsymbol{b}^\* = \boldsymbol{b} \cdot  \boldsymbol{a}^* = 0
+\end{align},
+$$
+
+$$\boldsymbol{G} = n \boldsymbol{a}^\* + m \boldsymbol{b}^\*$$
+---
+$$E_k = h \nu  - \phi  - E_B$$
+
+$$\hbar  k\_{||} = \sqrt{2 m E\_{kin}} \sin{\vartheta}$$
+
+$$E - E_F = - E_b$$
+
+---
 
 .center[![hedgehog](./images/hedgehog_samples.jpg)]
 
@@ -31,6 +62,10 @@ The math is $\alpha+\beta$.
 ---
 
 .center[![leedschematic](./images/leed_schematic.png)]
+
+---
+
+.center[![sample_holder](./images/sample_holder.jpg)]
 
 ---
 
@@ -99,8 +134,10 @@ class: center, white-bg
       var slideshow = remark.create();
       MathJax = {
         tex: {
-          inlineMath: [['$', '$'], ['\\(', '\\)']]
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          packages: {'[+]': ['ams', 'bolsymbol']}
         },
+        loader: {load: ['[tex]/ams', '[tex]/boldsymbol']},
         svg: {
           fontCache: 'global'
         }

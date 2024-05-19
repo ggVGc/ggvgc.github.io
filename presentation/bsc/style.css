@@ -92,12 +92,14 @@ img {
 
 img[alt=front] { width: 50%; }
 img[alt=logo] { width: 80%; }
-img[alt=hedgehog] { width: 60%; }
+img[alt=hedgehog] { width: 50%; }
+img[alt=sic_inhomogeneous_front] { width: 100%; }
 img[alt=sic_inhomogeneous] { width: 90%; }
 img[alt=sic_sharpness] { width: 90%; }
 img[alt=small_fine_mdc_sharpness] { width: 90%; }
 img[alt=small_fine_mdc_sharpness_2] { width: 90%; }
 img[alt=tac_binding_energy] { width: 90%; }
+img[alt=sample_holder] { width: 60%; }
 .cols {
   display: flex;
 }
