@@ -19,5 +19,8 @@
 
 - Quick mention of Bloch and the endstation and current capabilities
 - Mention previous work with raster ARPES/XPS raster scanning
-- 
-- 
+- Summary + Outlook 
+
+= Todo =
+- Write 1s stuff in peaks
+

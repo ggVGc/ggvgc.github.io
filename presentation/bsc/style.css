@@ -41,16 +41,30 @@ h1, h2, h3 {
 }
 
 .remark-slide-content {
-  font-size: 1.7em; 
+  font-size: 1.6em; 
   background-color: #fffefa;
 }
 
+/* .remark-slide-content p{ */
+  /* color: #555555 */
+/* } */
+
 .remark-slide-content h1{
   font-size: 40px;
+  text-align: center;
 }
 
-.first-page h1{
-  font-size: 80px;
+.remark-slide-content h2{
+  font-size: 30px;
+  font-style: italic;
+}
+
+.remark-slide-content h3{
+  font-size: 28px;
+}
+
+.remark-slide-content h3{
+  font-size: 24px;
 }
 
 .first-page {
@@ -86,20 +100,47 @@ code {
 
 
 img {
-  width: 100%;
+  width: 90%;
+}
+
+  .cols {
+    display: flex;
+  }
+  
+  .fifty {
+    flex: 50%;
+  }
+
+.bullets {
+    display: inline-block;
+}
+
+.bold{
+  font-weight: bold;
+}
+
+.italic{
+  font-style: italic;
 }
 
 
 img[alt=front] { width: 50%; }
 img[alt=logo] { width: 80%; }
-img[alt=hedgehog] { width: 50%; }
+img[alt=hedgehog] { width: 30%; }
 img[alt=sic_inhomogeneous_front] { width: 100%; }
-img[alt=sic_inhomogeneous] { width: 90%; }
-img[alt=sic_sharpness] { width: 90%; }
+img[alt=sic_inhomogeneous] { width: 70%; }
+img[alt=sic_sharpness] { width: 70%; }
 img[alt=small_fine_mdc_sharpness] { width: 90%; }
 img[alt=small_fine_mdc_sharpness_2] { width: 90%; }
 img[alt=tac_binding_energy] { width: 90%; }
 img[alt=sample_holder] { width: 60%; }
+img[alt=four_samples_photo] { width: 30%; }
+img[alt=arpes_inhomogeneous_combined] { width: 100%; }
+img[alt=arpes_peaks_sic] { width: 80%; }
+img[alt=arpes_peaks_graphene] { width: 80%; }
+img[alt=leed_image] { width: 80%; }
+img[alt=sic-tac] { width: 80%; }
+img[alt=leedschematic] { width: 70%; }
 .cols {
   display: flex;
 }
