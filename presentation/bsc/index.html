@@ -60,11 +60,14 @@ there is still value in getting a quick first look.
 # Techniques
 
 - .bold[LEED] (Low-energy electron diffraction)
+  - Low-energy
   - Uses electrons to probe a surface
-  - Gives information about crystal structure
-- Photoemission spectroscopy
+  - Information: crystal structure
+- .bold[PES] (Photoemission spectroscopy)
+  - High-energy, Low temperature (few K)
+  - .bold[XPS] (X-ray), .bold[ARPES] (Angle-Resolved)
   - Based on photoelectric effect
-  - Gives information about binding energies and energy bands
+  - Information: binding energies and energy bands
 - Measurements usually taken at single location
   - We instead scan across entire sample surface
 
@@ -157,6 +160,8 @@ Reciprocal lattice vector:
 $\boldsymbol{G} = n \boldsymbol{a}^\* + m \boldsymbol{b}^\*$
 ]
 
+Produces the observed LEED pattern
+
 
 
 ---
@@ -166,23 +171,51 @@ Experimental techniques based on photoelectric effect.
 Measures energies of bound electrons by probing with photons.
 
 - .bold[XPS] - X-ray photoelectron spectroscopy
+  - Core electrons
+  - Chemical structure
 - .bold[ARPES] - Angle-resolved photoemission spectroscopy
+  - Valence electrons
+  - Energy bands based on momentum measurements
+
+
+???
+XPS: Valence electrons hybridize, form bands
 
 ---
 # .center[Photoemission spectroscopy]
 Photoelectric effect:
 $$E\_k = h \nu  - \phi  - E\_B$$
+$\nu $ = frequency of the photon <br/>
+$\phi $ = work function of the analyzer <br/>
+$E_b$ = electron binding energy.
 
-Generally presented as binding energy, based on fermi level:
-
+$E\_{k}$ depends on $h \nu $ used during experiment. <br/>
+Data therefore generally presented with respect to
 $$E - E_F = - E\_B$$
+where $E_F$ is the fermi level of the sample.
 
 ---
 # .center[Photoemission spectroscopy: ARPES]
-
+Parallel crystal momentum of electron emitted at angle $\vartheta$ relative surface normal:
 $$\hbar  k\_{||} = \sqrt{2 m E\_{k}} \sin{\vartheta}$$
 
-.center[![arpes_analyzer](images/arpes_analyzer.png)]
+.cols[
+.flex-half-nocenter[
+
+
+Only parallel momentum is conserved.
+
+]
+
+.flex-half[
+
+![arpes_analyzer](images/arpes_analyzer.png)
+]
+]
+
+???
+As the electron crosses the surface barrier, 
+losing part of its energy due to the surface work function, only the component of p that is parallel to the surface is preserved.
 
 ---
 # Samples
@@ -290,10 +323,9 @@ class: center, middle
     </textarea>
     <script src="remark-latest.min.js">
     </script>
-    <script src='https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML' type="text/javascript"></script>
+    <!-- <script src='https://cdn.bootcss.com/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML' type="text/javascript"></script> -->
     <script>
       var slideshow = remark.create();
-      /*
       MathJax = {
         tex: {
           inlineMath: [['$', '$'], ['\\(', '\\)']],
@@ -304,9 +336,9 @@ class: center, middle
           fontCache: 'global'
         }
       };
-      */
 
       // Setup MathJax
+      /*
       MathJax.Hub.Config({
           tex2jax: {
           inlineMath: [['$','$'], ['\\(','\\)']],
@@ -320,8 +352,9 @@ class: center, middle
       });
 
       MathJax.Hub.Configured();
+      */
 
     </script>
-    <!-- <script src='MathJax-3.2.0/es5/tex-chtml.js' type="text/javascript"></script> -->
+    <script src='MathJax-3.2.0/es5/tex-chtml.js' type="text/javascript"></script>
   </body>
 </html>

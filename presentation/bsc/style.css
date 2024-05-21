@@ -141,7 +141,7 @@ img[alt=tac_binding_energy] { width: 60%; }
 img[alt=leed_image] { width: 80%; }
 img[alt=sic-tac] { width: 80%; }
 img[alt=leedschematic] { width: 70%; }
-img[alt=arpes_analyzer] { width: 70%; }
+img[alt=arpes_analyzer] { width: 100%; }
 img[alt=bloch_station] { width: 80%; }
 img[alt=software_running] { width: 100%; }
 .cols {
@@ -152,6 +152,10 @@ img[alt=software_running] { width: 100%; }
   flex: 50%;
   margin-top: auto;
   margin-bottom: auto;
+}
+
+.flex-half-nocenter {
+  flex: 50%;
 }
 
 .flex-right {
