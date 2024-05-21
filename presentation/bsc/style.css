@@ -153,8 +153,8 @@ img[alt=software_running] { width: 100%; }
   flex: 30%;
 }
 
-.flex70 {
-  flex: 70%;
+.flex80 {
+  flex: 80%;
     margin-top: auto;
     margin-bottom: auto;
 }
