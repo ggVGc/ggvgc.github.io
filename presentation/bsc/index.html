@@ -21,22 +21,33 @@ Normally LEED measurements look like on the right. We produce what's on the left
 ---
 # Motivation
 
-## Experimental work is costly
+### Experimental work is costly
   - Time
   - Money
-  - Availability (for example beamtime)
   - Complexity
-    - Maintenance
-    - Expert knowledge
+  - Availability (for example beamtime)
+    - Higher economic cost means fewer facilities
+
+
+--
+
+### Simpler methodologies:
+- Higher accessibility
+- Quicker iteration speed
+- More and better data
 
 ---
 # Motivation
 
-## We can do more with less
-- Get initial information from simpler technique
-- Better preparation before advanced experiments
+### Do more with less
+- Make spot-focused surface-sensitive techniques spatially resolved
+  - Raster scanning
+- Use simpler technique when possible
+  - LEED instead of XPS/ARPES
+  - Or as support during sample preparation
 
---
+---
+# Motivation
 
 ## Example: Difficult sample cleaving
 .center[![hedgehog](./images/hedgehog_samples.jpg)]
@@ -45,6 +56,19 @@ Normally LEED measurements look like on the right. We produce what's on the left
 Even if you eventually want to put your sample under deeper investigation,
 there is still value in getting a quick first look.
 
+---
+# Techniques
+
+- .bold[LEED] (Low-energy electron diffraction)
+  - Uses electrons to probe a surface
+  - Gives information about crystal structure
+- Photoemission spectroscopy
+  - Based on photoelectric effect
+  - Gives information about binding energies and energy bands
+  - .bold[XPS] (X-ray photoelectron spectroscopy)
+  - .bold[ARPES] (Angle-resolved photoemission spectroscopy)
+- Measurements usually taken at single location
+  - We instead scan across entire sample surface
 
 ---
 
@@ -140,13 +164,19 @@ $\boldsymbol{G} = n \boldsymbol{a}^\* + m \boldsymbol{b}^\*$
 ---
 
 # .center[Photoemission spectroscopy]
-- .bold[XPS] <br/> X-ray photoelectron spectroscopy
+Experimental techniques based on photoelectric effect.
+Measures energies of bound electrons by probing with photons.
 
-- .bold[ARPES] <br/> Angle-resolved photoemission spectroscopy
+- .bold[XPS] - X-ray photoelectron spectroscopy
+- .bold[ARPES] - Angle-resolved photoemission spectroscopy
 
 ---
 # .center[Photoemission spectroscopy]
+Photoelectric effect:
 $$E\_k = h \nu  - \phi  - E\_B$$
+
+Generally presented as binding energy, based on fermi level:
+
 $$E - E_F = - E\_B$$
 
 ---
@@ -155,6 +185,10 @@ $$E - E_F = - E\_B$$
 $$\hbar  k\_{||} = \sqrt{2 m E\_{k}} \sin{\vartheta}$$
 
 .center[![arpes_analyzer](./images/arpes_analyzer.png)]
+
+---
+# Samples
+
 
 ---
 # SiC-on-TaC sample
@@ -186,43 +220,49 @@ class: center
 TODO: Show demo?
 
 ---
-# .left[\[SiC-on-TaC\] LEED scan]
+# \[SiC-on-TaC\] LEED scan
 .center[![graphene_composite](./images/graphene_composite.jpg)]
 ???
 TODO: Split up into two slides
 
 ---
-# .left[[SiC-on-TaC] XPS scan: graphene]
-.center[![arpes_peaks_graphene](./images/gen/arpes_peaks_graphene.jpg)]
---
-.center[![tac_binding_energy](./images/tac_binding_energy.png)]
----
-# .left[[SiC-on-TaC] XPS scan: SiC]
+# [SiC-on-TaC] XPS scan
+## C 1s peak: SiC
 .center[![arpes_peaks_sic](./images/gen/arpes_peaks_sic.jpg)]
+--
 .center[![tac_binding_energy](./images/tac_binding_energy.png)]
 
 ---
-# .left[[SiC-on-TaC] <br/>LEED scan: Inhomogeneity]
+# [SiC-on-TaC] XPS scan
+## C 1s peak: graphene
+.center[![arpes_peaks_graphene](./images/gen/arpes_peaks_graphene.jpg)]
+.center[![tac_binding_energy](./images/tac_binding_energy.png)]
+
+???
+Explain the 2D image. Each location is one spectrum.
+
+---
+# [SiC-on-TaC] LEED scan <br/> Inhomogeneity
 .center[![sic_inhomogeneous](./images/gen/sic_inhomogeneous.jpg)]
 --
 .center[![sic_sharpness](./images/gen/sic_sharpness.jpg)]
 
 ---
-# .left[[SiC-on-TaC] <br/>ARPES scan: Inhomogeneity]
+# [SiC-on-TaC] ARPES scan <br/>Inhomogeneity
 
 ![arpes_inhomogeneous_combined](./images/gen/arpes_inhomogeneous_combined.jpg)
 
 ---
-# .left[[Cleaved crystal] LEED scan: coarse]
+# [Cleaved crystal] <br/> LEED scan: coarse
 .center[![small_crystal_full](./images/gen/small_crystal_full.jpg)]
 
 ---
-# .left[[Cleaved crystal] LEED scan: fine]
+# [Cleaved crystal] <br/> LEED scan: fine
 .center[![small_fine_mdc_sharpness](./images/gen/small_fine_mdc_sharpness.jpg)]
 --
 .center[![small_fine_mdc_sharpness_2](./images/gen/small_fine_mdc_sharpness_2.jpg)]
 ---
-# Multiple samples, single holder (LEED)
+# Multiple samples, single holder: LEED scan
 
 .center[![four_samples_photo](./images/four_samples_photo.jpg)]
 --

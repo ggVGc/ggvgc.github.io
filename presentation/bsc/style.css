@@ -56,14 +56,15 @@ h1, h2, h3 {
 
 .remark-slide-content h2{
   font-size: 32px;
+  text-align: center;
   /* font-style: italic; */
 }
 
 .remark-slide-content h3{
-  font-size: 28px;
+  font-size: 30px;
 }
 
-.remark-slide-content h3{
+.remark-slide-content h4{
   font-size: 24px;
 }
 
@@ -79,6 +80,10 @@ h1, h2, h3 {
 }
 
 ul { margin-bottom: 0.5em; }
+li { 
+margin-top: 0.25em; 
+margin-bottom: 0.25em; 
+}
 
 a, a > code {
   color: rgb(249, 38, 114);
@@ -118,14 +123,13 @@ img {
 
 img[alt=front] { width: 50%; }
 img[alt=logo] { width: 80%; }
-img[alt=hedgehog] { width: 30%; }
+img[alt=hedgehog] { width: 50%; }
 img[alt=sic_inhomogeneous_front] { width: 100%; }
 img[alt=sic_inhomogeneous] { width: 70%; }
 img[alt=sic_sharpness] { width: 70%; }
 img[alt=small_crystal_full] { width: 100%; }
 img[alt=small_fine_mdc_sharpness] { width: 70%; }
 img[alt=small_fine_mdc_sharpness_2] { width: 70%; }
-img[alt=tac_binding_energy] { width: 90%; }
 img[alt=sample_holder] { width: 60%; }
 img[alt=four_samples_photo] { width: 30%; }
 img[alt=multi_sample_1] { width: 80%; }
@@ -133,6 +137,7 @@ img[alt=multi_sample_2] { width: 80%; }
 img[alt=arpes_inhomogeneous_combined] { width: 100%; }
 img[alt=arpes_peaks_sic] { width: 80%; }
 img[alt=arpes_peaks_graphene] { width: 80%; }
+img[alt=tac_binding_energy] { width: 60%; }
 img[alt=leed_image] { width: 80%; }
 img[alt=sic-tac] { width: 80%; }
 img[alt=leedschematic] { width: 70%; }
