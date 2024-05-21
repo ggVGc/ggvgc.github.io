@@ -79,7 +79,7 @@ h1, h2, h3 {
   bottom: 3em;
 }
 
-ul { margin-bottom: 0.5em; }
+ul { margin-bottom: 0.8em; }
 li { 
 margin-top: 0.25em; 
 margin-bottom: 0.25em; 
@@ -135,14 +135,14 @@ img[alt=four_samples_photo] { width: 30%; }
 img[alt=multi_sample_1] { width: 80%; }
 img[alt=multi_sample_2] { width: 80%; }
 img[alt=arpes_inhomogeneous_combined] { width: 100%; }
-img[alt=arpes_peaks_sic] { width: 80%; }
-img[alt=arpes_peaks_graphene] { width: 80%; }
-img[alt=tac_binding_energy] { width: 60%; }
+img[alt=arpes_peaks_sic] { width: 70%; }
+img[alt=arpes_peaks_graphene] { width: 70%; }
+img[alt=tac_binding_energy] { width: 70%; }
 img[alt=leed_image] { width: 80%; }
 img[alt=sic-tac] { width: 80%; }
 img[alt=leedschematic] { width: 70%; }
-img[alt=arpes_analyzer] { width: 100%; }
-img[alt=bloch_station] { width: 80%; }
+img[alt=arpes_analyzer] { width: 50%; }
+img[alt=bloch_station] { width: 70%; }
 img[alt=software_running] { width: 100%; }
 .cols {
   display: flex;

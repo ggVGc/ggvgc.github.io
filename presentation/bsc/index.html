@@ -11,13 +11,25 @@
 class: center, first-page
 # Getting more from LEED:
 ## The implementation and possibilities of spatially resolved mapping
-# 
-.center[![sic_inhomogeneous_front](images/gen/sic_inhomogeneous.jpg)]
+<br/>
+<br/>
+Valter Sundström
+
+Supervisors: Craig Polley, Joachim Schnadt
+
+Location: Bloch beamline at MAX IV Laboratory
+
 ???
 I will talk about extending an existing experimental instrument.
 
 Normally LEED measurements look like on the right. We produce what's on the left.
 
+---
+
+# Getting more from LEED:
+## The implementation and possibilities of spatially resolved mapping
+# 
+.center[![sic_inhomogeneous_front](images/gen/sic_inhomogeneous.jpg)]
 ---
 # Motivation
 
@@ -28,13 +40,12 @@ Normally LEED measurements look like on the right. We produce what's on the left
   - Availability (for example beamtime)
     - Higher economic cost means fewer facilities
 
-
 --
 
 ### Simpler methodologies:
 - Higher accessibility
 - Quicker iteration speed
-- More and better data
+- More time, more data, better data
 
 ---
 # Motivation
@@ -59,6 +70,9 @@ there is still value in getting a quick first look.
 ---
 # Techniques
 
+- Surface sensitive
+- Measurements usually taken at single location
+  - We instead scan across entire sample surface
 - .bold[LEED] (Low-energy electron diffraction)
   - Low-energy
   - Uses electrons to probe a surface
@@ -68,43 +82,31 @@ there is still value in getting a quick first look.
   - .bold[XPS] (X-ray), .bold[ARPES] (Angle-Resolved)
   - Based on photoelectric effect
   - Information: binding energies and energy bands
-- Measurements usually taken at single location
-  - We instead scan across entire sample surface
 
----
-
-class: center
-
-# .center[LEED]
-## .center[(Low-energy electron diffraction)]
-
-.center[![leed_image](images/leed_image.jpg)]
-
-???
-Quick mention of what LEED is: Basically constructive interference.
-
-The image shows an example LEED pattern.
-
----
-# .center[LEED: Schematic of experimental setup]
-
-.center[![leedschematic](images/leed_schematic.png)]
 ---
 # .center[LEED: Diffraction]
 
 .cols[
 .flex-left[
-Matter waves, de Broglie wavelength:
+de Broglie wavelength:
 ]
 .flex-right[
   .left[$\lambda  = \frac{h}{p}$]
+]]
+.cols[
+.flex-left[
+Incident wavevector magnitude:
 ]
-]
+.flex-right[
+  .left[$k_0 = \frac{2 \pi}{\lambda}$]
+]]
+
+
+## 1D lattice with spacing $a$
 
 .cols[
 .flex-left[
-Constructive interference (1D), <br/>
-line spacing $a$: 
+Constructive interference:
 ]
 
 .flex-right[
@@ -114,7 +116,7 @@ line spacing $a$:
 
 .cols[
 .flex-left[
-In terms of wavevector <br/> magnitude $k_0$ of incident beam: 
+In terms of $k_0$:
 ]
 
 .flex-right[
@@ -135,14 +137,12 @@ $k\_0 \sin{\theta } = n \frac{2\pi }{a} = \Delta  k\_{||}$
 
 ???
 - de Broglie wavelength relevant for treating electrons as waves, causing interference.
-- 
-
 
 ---
 # .center[LEED: Reciprocal lattice]
+## 2D lattice with spacings $a$ and $b$
 
 Reciprocal unit vectors:
-
 .center[$
 \begin{align}
 & \boldsymbol{a}^\* = \frac{2\pi }{\boldsymbol{a}}  & \boldsymbol{b}^\* = \frac{2\pi }{\boldsymbol{b}}                   \\\\
@@ -171,11 +171,11 @@ Experimental techniques based on photoelectric effect.
 Measures energies of bound electrons by probing with photons.
 
 - .bold[XPS] (X-ray photoelectron spectroscopy)
-  - Core electrons
+  - Core electron energies
   - Chemical structure
 - .bold[ARPES] (Angle-resolved photoemission spectroscopy)
-  - Valence electrons
-  - Energy bands based on momentum measurements
+  - Momentum measurements
+  - Energy bands
 
 
 ???
@@ -197,24 +197,18 @@ where $E_F$ is the fermi level of the sample.
 ---
 # .center[Photoemission spectroscopy: ARPES]
 Parallel crystal momentum of electron emitted at angle $\vartheta$ relative surface normal:
-$$\hbar  k\_{||} = \sqrt{2 m E\_{k}} \sin{\vartheta}$$
 
-.cols[
-.flex-half-nocenter[
-
-
-Only parallel momentum is conserved.
-
+.center[
+$\hbar  k\_{||} = \sqrt{2 m E\_{k}} \sin{\vartheta}$
 ]
 
-.flex-half[
-
-![arpes_analyzer](images/arpes_analyzer.png)
-]
-]
+.center[![arpes_analyzer](images/arpes_analyzer.png)]
 
 ???
-As the electron crosses the surface barrier, 
+- Measuring kinetic energy and angle gives a the parallel crystal momentum of the electron
+- Crystal momentum: Momentum of electron within crystal
+- Only parallel momentum is conserved
+- As the electron crosses the surface barrier, 
 losing part of its energy due to the surface work function, only the component of p that is parallel to the surface is preserved.
 
 ---
@@ -225,7 +219,7 @@ losing part of its energy due to the surface work function, only the component o
 - Cleaved crystals
   - $\text{PtTe}\_2$ (Platinum ditelluride)
   - Multiple samples on a single holder
-  - Expectation of hard-to-find areas with good surface structure
+  - Expectation: Small areas of well-formed surface structure
 
 ---
 # SiC-on-TaC sample
@@ -317,11 +311,20 @@ Explain the 2D image. Each location is one spectrum.
 # Conclusions
 - LEED raster scans show good agreement with more advanced methods, up a limit
 - Scans with LEED are an order of magnitude quicker
-- If the information provided is adequate for a situation, the savings in time and cost are compelling
+- Savings in time and cost make the technique compelling, when results are adequate for the situation
 - A fast and low-barrier method allows for better preparation, prior to beamtime for example
 
 ???
+- LEED raster scanning can quickly 
 - We believe there is high value in a fast and low-barrier method for verifying expectations of a sample
+- Limit reached for the graphene spots, where the LEED resolution was too low
+
+The LEED raster scans taken during this
+study were performed by a single person without prior experience in experimental work
+after a short introduction to the setup, and the duration of each scan was less than one
+hour. In contrast, the ARPES scan taken of the same sample was performed by a person
+with expert knowledge of the system and, more importantly, required ten hours of beam
+time. 
 
 ---
 
