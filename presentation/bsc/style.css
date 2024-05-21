@@ -149,12 +149,12 @@ img[alt=software_running] { width: 100%; }
   margin-bottom: auto;
 }
 
-.flex30 {
-  flex: 30%;
+.flex-right {
+  flex: 28%;
 }
 
-.flex80 {
-  flex: 80%;
+.flex-left {
+  flex: 50%;
     margin-top: auto;
     margin-bottom: auto;
 }
