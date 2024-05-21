@@ -41,7 +41,7 @@ h1, h2, h3 {
 }
 
 .remark-slide-content {
-  font-size: 1.4em; 
+  font-size: 1.6em; 
   background-color: #fffefa;
 }
 
@@ -50,12 +50,12 @@ h1, h2, h3 {
 /* } */
 
 .remark-slide-content h1{
-  font-size: 40px;
+  font-size: 42px;
   text-align: center;
 }
 
 .remark-slide-content h2{
-  font-size: 30px;
+  font-size: 32px;
   /* font-style: italic; */
 }
 
