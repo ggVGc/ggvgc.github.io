@@ -162,10 +162,12 @@ img[alt=sample_annealing] { width: 40%; }
 
 .flex-right {
   flex: 28%;
+    margin-top: none;
+    margin-bottom: none;
 }
 
 .flex-left {
   flex: 50%;
-    margin-top: auto;
-    margin-bottom: auto;
+    margin-top: none;
+    margin-bottom: none;
 }
