@@ -1,0 +1,40 @@
+- Bild: modular synths:
+  - Reference as design of my language
+  
+- Timeline: 
+  - Weekend project in ChucK
+  - Lua 
+  - Haskell DSL (needed type-safe connections)
+  - Rewrote core modules in c++:
+    - Wanted to run on first pi zero, and later generate firmware code
+  - Racket (faster iteration speed):
+    - Uses old library as dynamic lib
+    - Great language in many wayts...:
+      - But development experience sucks
+  - Elixir:
+    - My favourite development experience. Feels like home.
+    - Fast iteration speed again
+    - Proper live reloading!
+    - Talks to old stuff over local socket using OSC
+    - Have given up on value-checked connections and code generation in order to focus on making the core setup working well.
+
+
+- Things are never really working well:
+  - Recently took a break to study
+  - Things left in somewhat state of disarray
+
+  
+- Mistakes in the project:
+  - Type-safe connections
+  - Firmware thing:
+    - Because launchpad pro has open source firmware
+    - Nerd snipe
+  - Compiling from Haskell to c++:
+    - Killed iteration speed
+
+Various issues:
+  - Audio loopers:
+    - Tried several things, mainly sooperlooper which everyone uses
+    - Couldn't make things work the way I wanted
+    - Ended up doing my own thing in ChucK
+

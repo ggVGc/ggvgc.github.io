@@ -1,0 +1,62 @@
+
+@font-face{
+  font-family: 'Droid Serif';
+  src: url('./assets/fonts/DroidSerif.ttf');
+}
+
+
+@font-face{
+  font-family: 'Ubuntu Mono';
+  src: url('./assets/fonts/UbuntuMono.ttf');
+}
+
+/*
+@font-face{
+  font-family: 'Yanone Kaffeesatz';
+  src: url('./assets/fonts/YanoneKaffeesatz.otf');
+}
+*/
+
+ body {
+        font-family: 'Droid Serif';
+      }
+      h1, h2, h3 {
+        font-family: 'Droid Serif';
+        font-weight: 400;
+        margin-bottom: 0;
+      }
+
+      .background {
+	background-color: #fffefa;
+      }
+
+      .white-text {color: gray}
+
+
+      .remark-slide-content { font-size: 1.5em; }
+
+
+      .footnote {
+        position: absolute;
+        bottom: 3em;
+      }
+
+      ul { margin-bottom: 0.5em; }
+
+      a, a > code {
+        color: rgb(249, 38, 114);
+        text-decoration: none;
+      }
+      code {
+        background: #e7e8e2;
+        border-radius: 5px;
+      }
+
+
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .remark-code-line-highlighted     { background-color: #373832; }
+
+      #slideshow .slide .content pre code {
+        font-size: 0.9em;
+        padding: 15px;
+      }

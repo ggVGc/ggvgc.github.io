@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Title</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" type="text/css" href="style.css"/>
+  </head>
+
+  <body>
+    <!-- Presentation Begin -->
+    <textarea id="source" style="visibility: hidden;">
+
+class: center, middle, background
+
+# Jamming, the hard way...
+### <br/>
+
+<!-- --- -->
+
+<!-- class: center, middle, background -->
+<!-- # Typesafe Modular Techno! -->
+<!-- ### (Haskell...) -->
+
+---
+class: background
+background-image: url(./plug.jpg)
+background-size: cover
+
+```elixir
+                              name: "Valter Sundström"
+                              type: "Techno programmer"
+                              origin: "Sweden"
+```
+
+---
+class: background
+
+# Overview
+
+- Music environment for live improvisation:
+  - "I just want to drunkenly jam"
+- Platform for creating software based on signal flows
+  - In a modular way
+
+--
+- Mainly for creating real-time sequencers
+  - Control music hardware
+  - Interact with midi-controllers and other input devices
+--
+
+- Also live looping
+
+---
+# Overview: Setup
+
+- Custom sequencer software
+- Many many (many) MIDI controllers
+- Many synths, some drum machines
+- Semi-custom software for audio looping
+- Audio routing on OSX:
+  - Horrible, but I live with it
+
+---
+# Implementation: Timeline
+- Weekend project in ChucK
+  - void chuck_gc(){ /\* TODO: implement \*/}
+- Lua 
+- Haskell DSL (needed type-safe connections)
+- Rewrote core modules in c++:
+  - Wanted to run on first pi zero, and later generate firmware code
+- Racket (faster iteration speed):
+  - Uses old library as dynamic lib
+  - Great language in many wayts...:
+    - But development experience sucks
+
+---
+# Implementation: Timeline, continued...
+
+- Elixir:
+  - My favourite development experience. Feels like home.
+  - Fast iteration speed again
+  - Proper live reloading!
+  - Talks to old stuff over local socket using OSC
+  - Have given up on value-checked connections and code generation in order to focus on making the core setup working well.
+
+- Embedded DSL in haskell
+  - Generates C++
+      - Actually more like "C with extras"...
+<!-- --- -->
+
+<!-- - Lots of hacks and dirty code -->
+<!-- - Have fun, don't get stuck writing a library -->
+
+<!-- -- -->
+<!--   -  Implement a language instead...? Shit happens. -->
+
+---
+class: background
+
+# DSL
+```haskell
+def (sig1) Constant 2
+def (sig2) Constant 1
+
+(sig1 .>. sig2)
+  |> onlyHigh
+  |> Printer "sig1 is larger than sig2"
+
+startBang
+  |> (sig1 |+ sig2)
+
+    
+```
+
+- Essentially meta-programming of signal chains
+- Two main concepts:
+  - Instantiate modules
+  - Connect modules
+- Compilation:
+  - Build binary from haskell source
+  - Run binary, generates C++
+  - `make`
+
+---
+class: background
+
+# Modules
+- Mutable state
+- Multiple inputs and multiple outputs
+    - Limited range of values
+- Implemented in C++
+
+---
+class: background
+
+# Haskell as meta-language - Pros
+
+- Parsing and structural correctness for free
+- New modules from existing modules
+  - Using DSL connections
+- Benefit from existing language tools (ghcide)
+- All the benefits of haskell
+  - If you like haskell
+
+---
+class: background
+
+# Haskell as meta-language - Cons
+- Slow build times
+- Awkward to map DSL constructs to decent error messages
+- Lazy evaluation gets confusing sometimes
+- Many more that I forget...
+
+<!-- -- -->
+<!-- ### Benefits outweigh issues by far for me right now -->
+
+---
+class: background
+
+# Range checking
+
+Naive implementation during code-gen step
+  - E.g not implemented in the Haskell type-system
+  - Trivial to do, and works
+  - Implement any rules I know how to program
+      - In normal Haskell
+
+---
+class: background
+
+# Why not type-level implementation?
+
+- Requires heavy use of dependent typing features
+  - I'm not smart or patient enough for that
+- Results in "amazing" haskell error messages
+- Actually more intersted in making music tools than implementing DSLs
+
+---
+class: background
+
+# Why do this?
+* I don't like writing music
+  - Would rather make it on the spot
+* Play all the things at once
+* Tired of bending things to my will
+  - Often failing...
+* Because I can
+
+---
+class: background
+
+# Aren't there many tools for making custom music software?
+
+- Yes
+  - PureData, Max/MSP, MaxForLive, Reaktor, ChucK, Bidule, VCVRack, Bitwig...
+- But
+  - NIH
+  - Mostly visual programming. I like text.
+  - Too slow, proprietary, inflexible...
+
+## None of them support all my...
+
+---
+class: background
+# ...use cases
+  - Performance instruments
+    - Main motivation
+    - Portable setup running on Raspberry Pi Zero
+  - Collaborative music system using standard protocols
+      - OSC implemented
+  - Firmware for midi controllers or synths
+      - Tested with Launchpad Pro
+  - Algorithmic composition
+  - Interactive installations.
+  - VST development
+  - Custom hardware devices
+
+---
+class: center, middle, background
+
+# LIVE DEMO
+## (it'll definitely work...)
+
+    </textarea>
+    <!-- Presentation End -->
+
+    <!-- <button type="button" id="load" onclick="loadContent()">Load Content</button> -->
+    <!-- <input type="file" id="file" onchange="loadFile(event)"> -->
+
+    <!-- Load Plugins -->
+    <!-- <script src="./assets/plugins/MathJax/MathJax.js?config=TeX-AMS_HTML-full" type="text/javascript"></script> -->
+    <!-- Load Plugins -->
+
+    <!-- Build Slide -->
+    <script src="./assets/scripts/remark.min.js"></script>
+    <script src="./main.js"></script>
+    <!-- Build Slide -->
+  </body>
+</html>
