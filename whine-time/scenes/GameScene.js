@@ -2,6 +2,7 @@ import { GameState } from '../GameState.js';
 export class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
+        this.gameEnded = false;
     }
     create() {
         console.log('GameScene create() called');
@@ -25,7 +26,7 @@ export class GameScene extends Phaser.Scene {
         // Start UI scene
         this.scene.launch('UIScene', { gameState: this.gameState });
         // Game loop
-        this.time.addEvent({
+        this.gameTimer = this.time.addEvent({
             delay: 100,
             callback: this.updateGame,
             callbackScope: this,
@@ -33,14 +34,18 @@ export class GameScene extends Phaser.Scene {
         });
     }
     updateGame() {
+        if (this.gameEnded)
+            return;
         this.gameState.updateNeeds(100);
         this.gameState.updateLeaveStatus();
         // Check win/lose conditions
         if (this.gameState.checkGameOver()) {
+            this.endGame();
             this.showGameOverScreen();
             return;
         }
         if (this.gameState.checkWinCondition()) {
+            this.endGame();
             this.showWinScreen();
             return;
         }
@@ -80,7 +85,7 @@ export class GameScene extends Phaser.Scene {
             backgroundColor: '#4CAF50',
             padding: { x: 20, y: 10 }
         }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
-            this.scene.restart();
+            this.restartGame();
         });
     }
     showWinScreen() {
@@ -151,6 +156,14 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(2000, () => {
             message.destroy();
         });
+    }
+    endGame() {
+        this.gameEnded = true;
+        this.gameTimer.destroy();
+    }
+    restartGame() {
+        this.gameEnded = false;
+        this.scene.restart();
     }
     getGameState() {
         return this.gameState;

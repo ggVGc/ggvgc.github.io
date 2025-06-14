@@ -1,4 +1,3 @@
-import { GameState } from '../GameState.js';
 export class UIScene extends Phaser.Scene {
     constructor() {
         super({ key: 'UIScene' });
