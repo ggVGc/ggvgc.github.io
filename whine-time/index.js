@@ -1,22 +1,37 @@
-import { GameScene } from './scenes/GameScene.js';
-import { UIScene } from './scenes/UIScene.js';
-console.log('Starting Whine Time game...');
+import Phaser from 'phaser';
+import { SimpleGameScene } from './SimpleGameScene';
+console.log('Starting Whine Time - Baby Care Factory Game...');
 console.log('Phaser version:', Phaser.VERSION);
 const config = {
     type: Phaser.AUTO,
     width: 1024,
-    height: 768,
+    height: 900, // Increased height for UI
     parent: 'game-container',
     backgroundColor: '#87CEEB',
-    scene: [GameScene, UIScene],
+    scene: [SimpleGameScene],
     physics: {
         default: 'arcade',
         arcade: {
             gravity: { y: 0, x: 0 },
             debug: false
         }
+    },
+    scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        min: {
+            width: 800,
+            height: 600
+        },
+        max: {
+            width: 1600,
+            height: 1200
+        }
     }
 };
 console.log('Creating Phaser game with config:', config);
 const game = new Phaser.Game(config);
 console.log('Game created:', game);
+// Export for debugging
+window.game = game;
+//# sourceMappingURL=index.js.map
