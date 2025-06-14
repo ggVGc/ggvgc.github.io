@@ -9,6 +9,8 @@ export class UIScene extends Phaser.Scene {
         this.gameState = data.gameState;
     }
     create() {
+        // Create background panel for UI
+        this.add.rectangle(750, 384, 500, 768, 0x2c3e50, 0.9);
         this.createResourceDisplay();
         this.createNeedsDisplay();
         this.createActionButtons();
@@ -20,30 +22,32 @@ export class UIScene extends Phaser.Scene {
         });
     }
     createResourceDisplay() {
+        const startX = 520;
         const startY = 20;
         const lineHeight = 25;
-        this.add.text(20, startY, 'Resources:', { fontSize: '18px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY, 'Resources:', { fontSize: '18px', color: '#FFFFFF', fontStyle: 'bold' });
         const resources = ['money', 'diapers', 'babyFormula', 'bottles', 'babyClothes', 'sleepHours'];
         resources.forEach((resource, index) => {
             const label = resource.charAt(0).toUpperCase() + resource.slice(1).replace(/([A-Z])/g, ' $1');
-            this.add.text(20, startY + 30 + index * lineHeight, `${label}:`, { fontSize: '14px', color: '#000000' });
-            this.resourceTexts[resource] = this.add.text(150, startY + 30 + index * lineHeight, '0', { fontSize: '14px', color: '#000000' });
+            this.add.text(startX, startY + 30 + index * lineHeight, `${label}:`, { fontSize: '14px', color: '#FFFFFF' });
+            this.resourceTexts[resource] = this.add.text(startX + 130, startY + 30 + index * lineHeight, '0', { fontSize: '14px', color: '#FFFFFF' });
         });
     }
     createNeedsDisplay() {
+        const startX = 520;
         const startY = 220;
-        this.add.text(20, startY, 'Your Needs:', { fontSize: '18px', color: '#000000', fontStyle: 'bold' });
-        this.add.text(20, startY + 30, 'Hunger:', { fontSize: '14px', color: '#000000' });
-        this.needsTexts.hunger = this.add.text(90, startY + 30, '0%', { fontSize: '14px', color: '#000000' });
-        this.add.text(20, startY + 55, 'Tiredness:', { fontSize: '14px', color: '#000000' });
-        this.needsTexts.tiredness = this.add.text(110, startY + 55, '0%', { fontSize: '14px', color: '#000000' });
+        this.add.text(startX, startY, 'Your Needs:', { fontSize: '18px', color: '#FFFFFF', fontStyle: 'bold' });
+        this.add.text(startX, startY + 30, 'Hunger:', { fontSize: '14px', color: '#FFFFFF' });
+        this.needsTexts.hunger = this.add.text(startX + 70, startY + 30, '0%', { fontSize: '14px', color: '#FFFFFF' });
+        this.add.text(startX, startY + 55, 'Tiredness:', { fontSize: '14px', color: '#FFFFFF' });
+        this.needsTexts.tiredness = this.add.text(startX + 90, startY + 55, '0%', { fontSize: '14px', color: '#FFFFFF' });
         // Baby needs
-        this.add.text(20, startY + 100, 'Baby Needs:', { fontSize: '18px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY + 100, 'Baby Needs:', { fontSize: '18px', color: '#FFFFFF', fontStyle: 'bold' });
         const babyNeeds = ['hunger', 'cleanliness', 'comfort', 'sleepiness'];
         babyNeeds.forEach((need, index) => {
             const label = need.charAt(0).toUpperCase() + need.slice(1);
-            this.add.text(20, startY + 130 + index * 25, `${label}:`, { fontSize: '14px', color: '#000000' });
-            this.babyNeedsTexts[need] = this.add.text(120, startY + 130 + index * 25, '0%', { fontSize: '14px', color: '#000000' });
+            this.add.text(startX, startY + 130 + index * 25, `${label}:`, { fontSize: '14px', color: '#FFFFFF' });
+            this.babyNeedsTexts[need] = this.add.text(startX + 100, startY + 130 + index * 25, '0%', { fontSize: '14px', color: '#FFFFFF' });
         });
     }
     createActionButtons() {
@@ -53,11 +57,11 @@ export class UIScene extends Phaser.Scene {
             backgroundColor: '#4CAF50',
             padding: { x: 10, y: 5 }
         };
-        const startX = 300;
+        const startX = 750;
         const startY = 20;
         const buttonHeight = 40;
         // Player actions
-        this.add.text(startX, startY, 'Player Actions:', { fontSize: '16px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY, 'Player Actions:', { fontSize: '16px', color: '#FFFFFF', fontStyle: 'bold' });
         const eatButton = this.add.text(startX, startY + 30, 'Eat ($10)', buttonStyle)
             .setInteractive()
             .on('pointerdown', () => this.playerEat());
@@ -68,7 +72,7 @@ export class UIScene extends Phaser.Scene {
             .setInteractive()
             .on('pointerdown', () => this.work());
         // Baby actions
-        this.add.text(startX, startY + 170, 'Baby Actions:', { fontSize: '16px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY + 170, 'Baby Actions:', { fontSize: '16px', color: '#FFFFFF', fontStyle: 'bold' });
         const feedBabyButton = this.add.text(startX, startY + 200, 'Feed Baby', { ...buttonStyle, backgroundColor: '#FF9800' })
             .setInteractive()
             .on('pointerdown', () => this.feedBaby());
@@ -76,12 +80,12 @@ export class UIScene extends Phaser.Scene {
             .setInteractive()
             .on('pointerdown', () => this.changeDiaper());
         // Money actions
-        this.add.text(startX, startY + 300, 'Money:', { fontSize: '16px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY + 300, 'Money:', { fontSize: '16px', color: '#FFFFFF', fontStyle: 'bold' });
         const loanButton = this.add.text(startX, startY + 330, 'Take Loan ($100)', { ...buttonStyle, backgroundColor: '#F44336' })
             .setInteractive()
             .on('pointerdown', () => this.takeLoan());
         // Shopping
-        this.add.text(startX, startY + 390, 'Shop:', { fontSize: '16px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY + 390, 'Shop:', { fontSize: '16px', color: '#FFFFFF', fontStyle: 'bold' });
         const buyDiapersButton = this.add.text(startX, startY + 420, 'Buy Diapers ($20)', { ...buttonStyle, backgroundColor: '#9C27B0' })
             .setInteractive()
             .on('pointerdown', () => this.buyDiapers());
@@ -89,7 +93,7 @@ export class UIScene extends Phaser.Scene {
             .setInteractive()
             .on('pointerdown', () => this.buyFormula());
         // Items/Upgrades
-        this.add.text(startX, startY + 520, 'Items:', { fontSize: '16px', color: '#000000', fontStyle: 'bold' });
+        this.add.text(startX, startY + 520, 'Items:', { fontSize: '16px', color: '#FFFFFF', fontStyle: 'bold' });
         const buyFormulaMakerButton = this.add.text(startX, startY + 550, 'Formula Maker ($200)', { ...buttonStyle, backgroundColor: '#795548' })
             .setInteractive()
             .on('pointerdown', () => this.buyFormulaMaker());
