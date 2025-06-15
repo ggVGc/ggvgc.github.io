@@ -1,0 +1,95 @@
+declare var Phaser: any;
+declare class BabyGame extends Phaser.Scene {
+    private entities;
+    private statusText;
+    private resourceText;
+    private gridSize;
+    private gridWidth;
+    private gridHeight;
+    private placementMode;
+    private humans;
+    private selectedHuman;
+    private resources;
+    private gameStats;
+    private upgrades;
+    private achievements;
+    private notifications;
+    constructor();
+    create(): void;
+    private createBackground;
+    private drawGrid;
+    private createUI;
+    private placeInitialEntities;
+    private createBaby;
+    private createHuman;
+    private createFeedingStation;
+    private setupInput;
+    private handlePlacement;
+    private selectHuman;
+    private checkHumanSelection;
+    private handleTaskAssignment;
+    private assignBabyTask;
+    private assignStationTask;
+    private recruitHuman;
+    private displayHumanStatus;
+    private updateGame;
+    private updateHuman;
+    private processHumanTasks;
+    private moveHumanToTask;
+    private executeTask;
+    private executeTaskFeedBaby;
+    private executeTaskHelpSleep;
+    private executeTaskComfort;
+    private executeTaskMakeFormula;
+    private executeTaskRefillWater;
+    private updateMovement;
+    private moveHumanStep;
+    private updateHumanVisuals;
+    private updateResourceDisplay;
+    private showMessage;
+    private advanceHour;
+    private formatHour;
+    private advanceDay;
+    private triggerRandomEvent;
+    private checkLevelUp;
+    private checkAchievements;
+    private showUpgradeMenu;
+    private buyUpgrade;
+    private showAchievements;
+    private addHappinessEffect;
+    private addSleepEffect;
+    private addComfortEffect;
+    private playLevelUpEffect;
+    private playAchievementEffect;
+    private makeBabyCry;
+    private stopBabyCrying;
+    private createNurseryTile;
+    private drawStar;
+    private addCornerDecorations;
+    private animateCryingBaby;
+    private showNotification;
+}
+declare const config: {
+    type: number;
+    width: number;
+    height: number;
+    parent: string;
+    backgroundColor: string;
+    scene: typeof BabyGame;
+    physics: {
+        default: string;
+        arcade: {
+            gravity: {
+                y: number;
+                x: number;
+            };
+            debug: boolean;
+        };
+    };
+    scale: {
+        mode: number;
+        autoCenter: number;
+    };
+};
+declare const game: Phaser.Game;
+//# sourceMappingURL=game.d.ts.map

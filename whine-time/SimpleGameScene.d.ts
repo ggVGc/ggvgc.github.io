@@ -1,4 +1,3 @@
-import Phaser from 'phaser';
 export declare class SimpleGameScene extends Phaser.Scene {
     private grid;
     private entities;

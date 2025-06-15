@@ -1,3 +1,4 @@
+"use strict";
 // Simple working game without complex imports
 class BabyGame extends Phaser.Scene {
     constructor() {
@@ -21,7 +22,8 @@ class BabyGame extends Phaser.Scene {
             tasksCompleted: 0,
             totalMoney: 500,
             daysPassed: 0,
-            reputation: 0
+            reputation: 0,
+            currentHour: 9
         };
         this.upgrades = {
             fasterFeeding: false,
@@ -52,6 +54,13 @@ class BabyGame extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
+        // Add hour cycle
+        this.time.addEvent({
+            delay: 1250, // New hour every 1.25 seconds (24 hours = 30 seconds for full day)
+            callback: this.advanceHour,
+            callbackScope: this,
+            loop: true
+        });
         // Add day/night cycle
         this.time.addEvent({
             delay: 30000, // New day every 30 seconds
@@ -77,34 +86,55 @@ class BabyGame extends Phaser.Scene {
     createBackground() {
         const gameWidth = this.gridWidth * this.gridSize;
         const gameHeight = this.gridHeight * this.gridSize;
-        // Create a gradient texture for the floor
+        // Create a nursery-themed background
         const bgGraphics = this.add.graphics();
-        // Base floor color - warm beige/cream
-        bgGraphics.fillStyle(0xF5E6D3);
-        bgGraphics.fillRect(0, 0, gameWidth, gameHeight);
-        // Add some texture with subtle patterns
-        bgGraphics.fillStyle(0xE8D5B7, 0.3);
-        for (let x = 0; x < gameWidth; x += 32) {
-            for (let y = 0; y < gameHeight; y += 32) {
-                if ((Math.floor(x / 32) + Math.floor(y / 32)) % 2 === 0) {
-                    bgGraphics.fillRect(x, y, 32, 32);
-                }
+        // Soft pastel gradient background
+        const gradient = this.add.graphics();
+        gradient.fillGradientStyle(0xFFE4E1, 0xE6E6FA, 0xF0FFFF, 0xFFF8DC, 1);
+        gradient.fillRect(0, 0, gameWidth, gameHeight);
+        // Add playful polka dot pattern
+        bgGraphics.fillStyle(0xFFB6C1, 0.3); // Light pink dots
+        for (let x = 16; x < gameWidth; x += 96) {
+            for (let y = 16; y < gameHeight; y += 96) {
+                bgGraphics.fillCircle(x, y, 8);
             }
         }
-        // Add border frame
+        // Add baby blue dots offset
+        bgGraphics.fillStyle(0xADD8E6, 0.3); // Light blue dots
+        for (let x = 64; x < gameWidth; x += 96) {
+            for (let y = 64; y < gameHeight; y += 96) {
+                bgGraphics.fillCircle(x, y, 6);
+            }
+        }
+        // Add soft yellow stars
+        bgGraphics.fillStyle(0xFFFF99, 0.4);
+        for (let x = 48; x < gameWidth; x += 128) {
+            for (let y = 32; y < gameHeight; y += 128) {
+                this.drawStar(bgGraphics, x, y, 5, 4, 8);
+            }
+        }
+        // Add cute border with baby theme
         const borderGraphics = this.add.graphics();
-        borderGraphics.lineStyle(4, 0x8B4513, 0.8); // Brown border
-        borderGraphics.strokeRect(2, 2, gameWidth - 4, gameHeight - 4);
-        // Inner decorative border
-        borderGraphics.lineStyle(2, 0xDEB887, 0.6); // Light brown
-        borderGraphics.strokeRect(6, 6, gameWidth - 12, gameHeight - 12);
+        borderGraphics.lineStyle(6, 0xFF69B4, 0.8); // Hot pink border
+        borderGraphics.strokeRect(3, 3, gameWidth - 6, gameHeight - 6);
+        // Inner decorative border with baby colors
+        borderGraphics.lineStyle(3, 0x87CEEB, 0.7); // Sky blue
+        borderGraphics.strokeRect(9, 9, gameWidth - 18, gameHeight - 18);
+        // Add corner decorations
+        this.addCornerDecorations(gameWidth, gameHeight);
     }
     drawGrid() {
         const gameWidth = this.gridWidth * this.gridSize;
         const gameHeight = this.gridHeight * this.gridSize;
+        // Create individual nursery floor tiles instead of just lines
+        for (let x = 0; x < this.gridWidth; x++) {
+            for (let y = 0; y < this.gridHeight; y++) {
+                this.createNurseryTile(x, y);
+            }
+        }
+        // Add playful grid lines with baby colors
         const gridGraphics = this.add.graphics();
-        // Main grid lines - more visible
-        gridGraphics.lineStyle(1.5, 0x999999, 0.7);
+        gridGraphics.lineStyle(2, 0xFFB6C1, 0.6); // Soft pink lines
         // Draw vertical lines
         for (let x = 0; x <= this.gridWidth; x++) {
             const xPos = x * this.gridSize;
@@ -118,33 +148,24 @@ class BabyGame extends Phaser.Scene {
             gridGraphics.lineTo(gameWidth, yPos);
         }
         gridGraphics.strokePath();
-        // Add subtle inner grid lines for better cell definition
-        gridGraphics.lineStyle(0.5, 0xBBBBBB, 0.4);
-        for (let x = 1; x < this.gridWidth; x++) {
-            const xPos = x * this.gridSize;
-            gridGraphics.moveTo(xPos + 1, 1);
-            gridGraphics.lineTo(xPos + 1, gameHeight - 1);
-        }
-        for (let y = 1; y < this.gridHeight; y++) {
-            const yPos = y * this.gridSize;
-            gridGraphics.moveTo(1, yPos + 1);
-            gridGraphics.lineTo(gameWidth - 1, yPos + 1);
-        }
-        gridGraphics.strokePath();
-        // Add grid coordinates for better navigation (every 4th line)
+        // Add cute coordinate markers
         const coordStyle = {
-            fontSize: '10px',
-            color: '#666666',
-            alpha: 0.6
+            fontSize: '12px',
+            color: '#FF69B4',
+            fontFamily: 'Comic Sans MS, cursive',
+            backgroundColor: '#FFFFFF',
+            padding: { x: 3, y: 2 },
+            alpha: 0.8
         };
+        // Add playful coordinate labels
         for (let x = 0; x <= this.gridWidth; x += 4) {
             if (x > 0) {
-                this.add.text(x * this.gridSize + 2, 2, x.toString(), coordStyle);
+                this.add.text(x * this.gridSize + 4, 4, `${x}`, coordStyle);
             }
         }
         for (let y = 0; y <= this.gridHeight; y += 4) {
             if (y > 0) {
-                this.add.text(2, y * this.gridSize + 2, y.toString(), coordStyle);
+                this.add.text(4, y * this.gridSize + 4, `${y}`, coordStyle);
             }
         }
     }
@@ -849,7 +870,8 @@ class BabyGame extends Phaser.Scene {
         human.getData('selectionRing').setPosition(x, y);
     }
     updateResourceDisplay() {
-        const text = `Money: $${this.resources.money} | Formula: ${this.resources.formula} | Happiness: ${this.resources.happiness} | Level: ${this.gameStats.level} | Day: ${this.gameStats.daysPassed} | XP: ${this.resources.experience}`;
+        const hourDisplay = this.formatHour(this.gameStats.currentHour);
+        const text = `Money: $${this.resources.money} | Formula: ${this.resources.formula} | Happiness: ${this.resources.happiness} | Level: ${this.gameStats.level} | Day: ${this.gameStats.daysPassed} | Hour: ${hourDisplay} | XP: ${this.resources.experience}`;
         this.resourceText.setText(text);
     }
     showMessage(text) {
@@ -871,8 +893,18 @@ class BabyGame extends Phaser.Scene {
             }
         });
     }
+    advanceHour() {
+        this.gameStats.currentHour = (this.gameStats.currentHour + 1) % 24;
+        this.updateResourceDisplay();
+    }
+    formatHour(hour) {
+        const period = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        return `${displayHour}:00 ${period}`;
+    }
     advanceDay() {
         this.gameStats.daysPassed++;
+        this.gameStats.currentHour = 9; // Reset to 9 AM at start of new day
         // Daily bonuses and events
         const moneyBonus = this.upgrades.bonusMoney ? 100 : 50;
         this.resources.money += moneyBonus;
@@ -1143,6 +1175,118 @@ class BabyGame extends Phaser.Scene {
             cryText.destroy();
         }
     }
+    createNurseryTile(gridX, gridY) {
+        const worldX = gridX * this.gridSize;
+        const worldY = gridY * this.gridSize;
+        const tileSize = this.gridSize;
+        const tileGraphics = this.add.graphics();
+        // Create different tile patterns based on position
+        const pattern = (gridX + gridY) % 4;
+        switch (pattern) {
+            case 0:
+                // Soft cream tile with tiny hearts
+                tileGraphics.fillStyle(0xFFF8DC, 0.8);
+                tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
+                if (Math.random() < 0.3) {
+                    this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '💕', {
+                        fontSize: '12px',
+                        alpha: 0.4
+                    }).setOrigin(0.5);
+                }
+                break;
+            case 1:
+                // Light pink tile with stars
+                tileGraphics.fillStyle(0xFFE4E1, 0.8);
+                tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
+                if (Math.random() < 0.2) {
+                    this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '⭐', {
+                        fontSize: '10px',
+                        alpha: 0.5
+                    }).setOrigin(0.5);
+                }
+                break;
+            case 2:
+                // Light blue tile with clouds
+                tileGraphics.fillStyle(0xE6F3FF, 0.8);
+                tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
+                if (Math.random() < 0.25) {
+                    this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '☁️', {
+                        fontSize: '10px',
+                        alpha: 0.4
+                    }).setOrigin(0.5);
+                }
+                break;
+            case 3:
+                // Light yellow tile with moons
+                tileGraphics.fillStyle(0xFFFFF0, 0.8);
+                tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
+                if (Math.random() < 0.2) {
+                    this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '🌙', {
+                        fontSize: '8px',
+                        alpha: 0.5
+                    }).setOrigin(0.5);
+                }
+                break;
+        }
+        // Add subtle tile border
+        tileGraphics.lineStyle(1, 0xD3D3D3, 0.3);
+        tileGraphics.strokeRect(worldX + 1, worldY + 1, tileSize - 2, tileSize - 2);
+    }
+    drawStar(graphics, x, y, points, innerRadius, outerRadius) {
+        const angle = Math.PI / points;
+        graphics.beginPath();
+        graphics.moveTo(x + Math.cos(0) * outerRadius, y + Math.sin(0) * outerRadius);
+        for (let i = 1; i < points * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const currentAngle = i * angle;
+            graphics.lineTo(x + Math.cos(currentAngle) * radius, y + Math.sin(currentAngle) * radius);
+        }
+        graphics.closePath();
+        graphics.fillPath();
+    }
+    addCornerDecorations(gameWidth, gameHeight) {
+        // Top-left corner - baby bottle
+        this.add.text(20, 20, '🍼', {
+            fontSize: '24px',
+            alpha: 0.6
+        });
+        // Top-right corner - teddy bear
+        this.add.text(gameWidth - 40, 20, '🧸', {
+            fontSize: '24px',
+            alpha: 0.6
+        });
+        // Bottom-left corner - rattle
+        this.add.text(20, gameHeight - 40, '🪀', {
+            fontSize: '24px',
+            alpha: 0.6
+        });
+        // Bottom-right corner - pacifier
+        this.add.text(gameWidth - 40, gameHeight - 40, '🍼', {
+            fontSize: '24px',
+            alpha: 0.6
+        });
+        // Add playful border decorations
+        for (let x = 80; x < gameWidth - 80; x += 120) {
+            this.add.text(x, 15, '🌈', {
+                fontSize: '16px',
+                alpha: 0.5
+            });
+            this.add.text(x, gameHeight - 25, '🦋', {
+                fontSize: '14px',
+                alpha: 0.5
+            });
+        }
+        for (let y = 80; y < gameHeight - 80; y += 120) {
+            this.add.text(15, y, '🎈', {
+                fontSize: '16px',
+                alpha: 0.5
+            });
+            this.add.text(gameWidth - 25, y, '🌸', {
+                fontSize: '14px',
+                alpha: 0.5
+            });
+        }
+    }
     animateCryingBaby(baby) {
         // Make baby shake when crying
         if (!baby.getData('isShaking')) {
@@ -1201,3 +1345,4 @@ const config = {
 };
 const game = new Phaser.Game(config);
 console.log('Game created successfully!');
+//# sourceMappingURL=game.js.map
