@@ -11,8 +11,28 @@ class BabyGame extends Phaser.Scene {
             money: 500,
             diapers: 20,
             formula: 10,
-            food: 10
+            food: 10,
+            happiness: 0,
+            experience: 0
         };
+        this.gameStats = {
+            level: 1,
+            babiesCaredFor: 0,
+            tasksCompleted: 0,
+            totalMoney: 500,
+            daysPassed: 0,
+            reputation: 0
+        };
+        this.upgrades = {
+            fasterFeeding: false,
+            efficientFormula: false,
+            autoComfort: false,
+            doubleHappiness: false,
+            stressReduction: false,
+            bonusMoney: false
+        };
+        this.achievements = new Set();
+        this.notifications = [];
         this.entities = new Map();
         this.humans = new Map();
     }
@@ -29,6 +49,20 @@ class BabyGame extends Phaser.Scene {
         this.time.addEvent({
             delay: 2000, // Update every 2 seconds
             callback: this.updateGame,
+            callbackScope: this,
+            loop: true
+        });
+        // Add day/night cycle
+        this.time.addEvent({
+            delay: 30000, // New day every 30 seconds
+            callback: this.advanceDay,
+            callbackScope: this,
+            loop: true
+        });
+        // Check achievements periodically
+        this.time.addEvent({
+            delay: 5000,
+            callback: this.checkAchievements,
             callbackScope: this,
             loop: true
         });
@@ -164,6 +198,26 @@ class BabyGame extends Phaser.Scene {
             this.placementMode = null;
             this.showMessage('Placement cancelled');
         });
+        buttonX += 80;
+        const upgradeBtn = this.add.text(buttonX, buttonY, 'Upgrades', {
+            fontSize: '12px',
+            color: '#FFFFFF',
+            backgroundColor: '#9C27B0',
+            padding: { x: 8, y: 4 }
+        }).setInteractive();
+        upgradeBtn.on('pointerdown', () => {
+            this.showUpgradeMenu();
+        });
+        buttonX += 80;
+        const achieveBtn = this.add.text(buttonX, buttonY, 'Goals', {
+            fontSize: '12px',
+            color: '#FFFFFF',
+            backgroundColor: '#FF5722',
+            padding: { x: 8, y: 4 }
+        }).setInteractive();
+        achieveBtn.on('pointerdown', () => {
+            this.showAchievements();
+        });
         this.updateResourceDisplay();
     }
     placeInitialEntities() {
@@ -185,6 +239,9 @@ class BabyGame extends Phaser.Scene {
         baby.setData('hunger', 60);
         baby.setData('happiness', 70);
         baby.setData('sleepy', 40);
+        baby.setData('crying', false);
+        baby.setData('lastFed', 0);
+        baby.setData('personalityType', Math.floor(Math.random() * 3)); // 0=easy, 1=normal, 2=difficult
         baby.setData('shadow', shadow);
         // Add cute face
         const leftEye = this.add.circle(worldX - 8, worldY - 6, 3, 0x000000);
@@ -476,11 +533,29 @@ class BabyGame extends Phaser.Scene {
                 const hunger = entity.getData('hunger');
                 const happiness = entity.getData('happiness');
                 const sleepy = entity.getData('sleepy');
-                // Babies get hungry and sleepy over time
-                entity.setData('hunger', Math.min(100, hunger + 8));
-                entity.setData('sleepy', Math.min(100, sleepy + 10));
-                // Update baby color based on state
-                if (hunger > 80) {
+                // Babies get hungry and sleepy over time based on personality
+                const personalityType = entity.getData('personalityType');
+                const hungerRate = personalityType === 2 ? 12 : (personalityType === 1 ? 8 : 6);
+                const sleepyRate = personalityType === 2 ? 15 : (personalityType === 1 ? 10 : 8);
+                entity.setData('hunger', Math.min(100, hunger + hungerRate));
+                entity.setData('sleepy', Math.min(100, sleepy + sleepyRate));
+                // Crying logic
+                const isCrying = entity.getData('crying');
+                if ((hunger > 75 || sleepy > 85) && !isCrying) {
+                    entity.setData('crying', true);
+                    this.makeBabyCry(entity);
+                }
+                else if (hunger < 50 && sleepy < 60 && isCrying) {
+                    entity.setData('crying', false);
+                    this.stopBabyCrying(entity);
+                }
+                // Update baby color based on state and crying
+                const babyIsCrying = entity.getData('crying');
+                if (babyIsCrying) {
+                    entity.setFillStyle(0xFF4444); // Bright red when crying
+                    this.animateCryingBaby(entity);
+                }
+                else if (hunger > 80) {
                     entity.setFillStyle(0xFF6B6B); // Red when very hungry
                 }
                 else if (sleepy > 80) {
@@ -503,15 +578,36 @@ class BabyGame extends Phaser.Scene {
         const hunger = human.getData('hunger');
         const tiredness = human.getData('tiredness');
         const stress = human.getData('stress');
-        // Update needs over time
+        // Update needs over time (affected by upgrades)
+        const stressMultiplier = this.upgrades.stressReduction ? 0.5 : 1;
         human.setData('hunger', Math.min(100, hunger + 5));
         human.setData('tiredness', Math.min(100, tiredness + 3));
-        // Stress increases if needs are high
+        // Stress from crying babies
+        let cryingBabies = 0;
+        this.entities.forEach(entity => {
+            if (entity.getData('type') === 'baby' && entity.getData('crying')) {
+                cryingBabies++;
+            }
+        });
+        if (cryingBabies > 0) {
+            human.setData('stress', Math.min(100, stress + (cryingBabies * 3 * stressMultiplier)));
+        }
+        // Base stress changes
         if (hunger > 70 || tiredness > 70) {
-            human.setData('stress', Math.min(100, stress + 5));
+            human.setData('stress', Math.min(100, stress + (5 * stressMultiplier)));
         }
         else {
-            human.setData('stress', Math.max(0, stress - 2));
+            human.setData('stress', Math.max(0, stress - 1));
+        }
+        // High stress affects task performance
+        if (stress > 80) {
+            const taskQueue = human.getData('taskQueue');
+            if (taskQueue.length > 0 && Math.random() < 0.1) {
+                // 10% chance to drop a task when very stressed
+                taskQueue.pop();
+                human.setData('taskQueue', taskQueue);
+                this.showMessage(`${human.getData('name')} is too stressed and dropped a task!`);
+            }
         }
         // Update human color based on state
         if (hunger > 80 || tiredness > 80 || stress > 80) {
@@ -619,13 +715,22 @@ class BabyGame extends Phaser.Scene {
             const baby = this.entities.get(task.targetId);
             if (baby) {
                 const hunger = baby.getData('hunger');
-                baby.setData('hunger', Math.max(0, hunger - 50));
-                baby.setData('happiness', Math.min(100, baby.getData('happiness') + 20));
+                const feedAmount = this.upgrades.fasterFeeding ? 70 : 50;
+                const happinessBonus = this.upgrades.doubleHappiness ? 40 : 20;
+                baby.setData('hunger', Math.max(0, hunger - feedAmount));
+                baby.setData('happiness', Math.min(100, baby.getData('happiness') + happinessBonus));
                 baby.setData('sleepy', Math.min(100, baby.getData('sleepy') + 30));
-                this.resources.formula--;
+                const formulaUsed = this.upgrades.efficientFormula ? 0.5 : 1;
+                this.resources.formula -= formulaUsed;
+                this.resources.happiness += 5;
+                this.resources.experience += 10;
+                this.gameStats.tasksCompleted++;
+                this.gameStats.babiesCaredFor++;
+                this.addHappinessEffect(baby.x, baby.y);
                 const humanName = human.getData('name');
-                this.showMessage(`${humanName} fed ${task.targetName}!`);
+                this.showMessage(`${humanName} fed ${task.targetName}! (+5 happiness, +10 XP)`);
                 this.updateResourceDisplay();
+                this.checkLevelUp();
                 baby.setFillStyle(0x98FB98);
             }
         }
@@ -637,11 +742,18 @@ class BabyGame extends Phaser.Scene {
         const baby = this.entities.get(task.targetId);
         if (baby) {
             const sleepy = baby.getData('sleepy');
+            const happinessBonus = this.upgrades.doubleHappiness ? 60 : 30;
             baby.setData('sleepy', Math.max(0, sleepy - 60));
-            baby.setData('happiness', Math.min(100, baby.getData('happiness') + 30));
+            baby.setData('happiness', Math.min(100, baby.getData('happiness') + happinessBonus));
             baby.setData('hunger', Math.min(100, baby.getData('hunger') + 20));
+            this.resources.happiness += 8;
+            this.resources.experience += 15;
+            this.gameStats.tasksCompleted++;
+            this.addSleepEffect(baby.x, baby.y);
             const humanName = human.getData('name');
-            this.showMessage(`${humanName} helped ${task.targetName} sleep!`);
+            this.showMessage(`${humanName} helped ${task.targetName} sleep! (+8 happiness, +15 XP)`);
+            this.updateResourceDisplay();
+            this.checkLevelUp();
             baby.setFillStyle(0x9370DB);
         }
     }
@@ -649,9 +761,17 @@ class BabyGame extends Phaser.Scene {
         const baby = this.entities.get(task.targetId);
         if (baby) {
             const happiness = baby.getData('happiness');
-            baby.setData('happiness', Math.min(100, happiness + 15));
+            const comfortAmount = this.upgrades.autoComfort ? 25 : 15;
+            const happinessBonus = this.upgrades.doubleHappiness ? 6 : 3;
+            baby.setData('happiness', Math.min(100, happiness + comfortAmount));
+            this.resources.happiness += happinessBonus;
+            this.resources.experience += 5;
+            this.gameStats.tasksCompleted++;
+            this.addComfortEffect(baby.x, baby.y);
             const humanName = human.getData('name');
-            this.showMessage(`${humanName} comforted ${task.targetName}!`);
+            this.showMessage(`${humanName} comforted ${task.targetName}! (+${happinessBonus} happiness, +5 XP)`);
+            this.updateResourceDisplay();
+            this.checkLevelUp();
             baby.setFillStyle(0x98FB98);
         }
     }
@@ -729,7 +849,7 @@ class BabyGame extends Phaser.Scene {
         human.getData('selectionRing').setPosition(x, y);
     }
     updateResourceDisplay() {
-        const text = `Money: $${this.resources.money} | Diapers: ${this.resources.diapers} | Formula: ${this.resources.formula} | Food: ${this.resources.food}`;
+        const text = `Money: $${this.resources.money} | Formula: ${this.resources.formula} | Happiness: ${this.resources.happiness} | Level: ${this.gameStats.level} | Day: ${this.gameStats.daysPassed} | XP: ${this.resources.experience}`;
         this.resourceText.setText(text);
     }
     showMessage(text) {
@@ -748,6 +868,312 @@ class BabyGame extends Phaser.Scene {
         this.time.delayedCall(4000, () => {
             if (message && message.active) {
                 message.destroy();
+            }
+        });
+    }
+    advanceDay() {
+        this.gameStats.daysPassed++;
+        // Daily bonuses and events
+        const moneyBonus = this.upgrades.bonusMoney ? 100 : 50;
+        this.resources.money += moneyBonus;
+        this.gameStats.totalMoney += moneyBonus;
+        // Random events
+        if (Math.random() < 0.3) {
+            this.triggerRandomEvent();
+        }
+        this.showNotification(`Day ${this.gameStats.daysPassed} - Earned $${moneyBonus} daily income!`, 0x4CAF50);
+        this.updateResourceDisplay();
+    }
+    triggerRandomEvent() {
+        const events = [
+            { message: 'Surprise donation! +$200', money: 200, happiness: 0 },
+            { message: 'Community appreciation! +20 happiness', money: 0, happiness: 20 },
+            { message: 'Formula delivery! +5 formula', money: 0, happiness: 0, formula: 5 },
+            { message: 'Volunteer helper reduces stress!', money: 0, happiness: 15 }
+        ];
+        const event = events[Math.floor(Math.random() * events.length)];
+        this.resources.money += event.money || 0;
+        this.resources.happiness += event.happiness || 0;
+        if (event.formula)
+            this.resources.formula += event.formula;
+        this.showNotification(event.message, 0xFF9800);
+    }
+    checkLevelUp() {
+        const expNeeded = this.gameStats.level * 100;
+        if (this.resources.experience >= expNeeded) {
+            this.gameStats.level++;
+            this.resources.experience -= expNeeded;
+            this.resources.money += this.gameStats.level * 50;
+            this.showNotification(`LEVEL UP! You are now level ${this.gameStats.level}! +$${this.gameStats.level * 50}`, 0x9C27B0);
+            this.playLevelUpEffect();
+        }
+    }
+    checkAchievements() {
+        const achievementsList = [
+            { id: 'first_baby', name: 'First Steps', desc: 'Care for your first baby', condition: () => this.gameStats.babiesCaredFor >= 1, reward: 50 },
+            { id: 'caring_master', name: 'Caring Master', desc: 'Complete 100 tasks', condition: () => this.gameStats.tasksCompleted >= 100, reward: 200 },
+            { id: 'wealthy', name: 'Wealthy Caregiver', desc: 'Earn $2000 total', condition: () => this.gameStats.totalMoney >= 2000, reward: 300 },
+            { id: 'happiness_guru', name: 'Happiness Guru', desc: 'Accumulate 500 happiness', condition: () => this.resources.happiness >= 500, reward: 150 },
+            { id: 'experienced', name: 'Experienced', desc: 'Reach level 10', condition: () => this.gameStats.level >= 10, reward: 500 },
+            { id: 'survivor', name: 'Survivor', desc: 'Survive 30 days', condition: () => this.gameStats.daysPassed >= 30, reward: 400 }
+        ];
+        achievementsList.forEach(achievement => {
+            if (!this.achievements.has(achievement.id) && achievement.condition()) {
+                this.achievements.add(achievement.id);
+                this.resources.money += achievement.reward;
+                this.showNotification(`ACHIEVEMENT: ${achievement.name}! +$${achievement.reward}`, 0xFFD700);
+                this.playAchievementEffect();
+            }
+        });
+    }
+    showUpgradeMenu() {
+        // Remove existing menu
+        this.children.getChildren().forEach((child) => {
+            if (child.getData && child.getData('isUpgradeMenu')) {
+                child.destroy();
+            }
+        });
+        const menuBg = this.add.rectangle(512, 350, 600, 500, 0x000000, 0.8)
+            .setData('isUpgradeMenu', true);
+        const title = this.add.text(512, 150, 'UPGRADES', {
+            fontSize: '24px',
+            color: '#FFFFFF'
+        }).setOrigin(0.5).setData('isUpgradeMenu', true);
+        const upgrades = [
+            { key: 'fasterFeeding', name: 'Faster Feeding', desc: 'Feeding reduces hunger by 70 instead of 50', cost: 300 },
+            { key: 'efficientFormula', name: 'Efficient Formula', desc: 'Use 50% less formula per feeding', cost: 400 },
+            { key: 'autoComfort', name: 'Super Comfort', desc: 'Comforting gives +25 happiness instead of +15', cost: 250 },
+            { key: 'doubleHappiness', name: 'Double Happiness', desc: 'All actions give double happiness rewards', cost: 500 },
+            { key: 'stressReduction', name: 'Stress Relief', desc: 'Humans get stressed 50% slower', cost: 350 },
+            { key: 'bonusMoney', name: 'Daily Bonus', desc: 'Double daily income ($100 instead of $50)', cost: 600 }
+        ];
+        let yPos = 200;
+        upgrades.forEach((upgrade, index) => {
+            const owned = this.upgrades[upgrade.key];
+            const canAfford = this.resources.money >= upgrade.cost;
+            const color = owned ? '#00FF00' : (canAfford ? '#FFFFFF' : '#888888');
+            const upgradeText = this.add.text(512, yPos, `${upgrade.name} - $${upgrade.cost} ${owned ? '(OWNED)' : ''}`, {
+                fontSize: '16px',
+                color: color
+            }).setOrigin(0.5).setData('isUpgradeMenu', true);
+            const descText = this.add.text(512, yPos + 20, upgrade.desc, {
+                fontSize: '12px',
+                color: '#CCCCCC'
+            }).setOrigin(0.5).setData('isUpgradeMenu', true);
+            if (!owned && canAfford) {
+                upgradeText.setInteractive().on('pointerdown', () => {
+                    this.buyUpgrade(upgrade.key);
+                    this.showUpgradeMenu(); // Refresh menu
+                });
+            }
+            yPos += 60;
+        });
+        const closeBtn = this.add.text(512, 550, 'CLOSE', {
+            fontSize: '18px',
+            color: '#FF4444',
+            backgroundColor: '#FFFFFF',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive().setData('isUpgradeMenu', true);
+        closeBtn.on('pointerdown', () => {
+            this.children.getChildren().forEach((child) => {
+                if (child.getData && child.getData('isUpgradeMenu')) {
+                    child.destroy();
+                }
+            });
+        });
+    }
+    buyUpgrade(upgradeKey) {
+        const upgrades = {
+            fasterFeeding: 300,
+            efficientFormula: 400,
+            autoComfort: 250,
+            doubleHappiness: 500,
+            stressReduction: 350,
+            bonusMoney: 600
+        };
+        const cost = upgrades[upgradeKey];
+        if (this.resources.money >= cost) {
+            this.resources.money -= cost;
+            this.upgrades[upgradeKey] = true;
+            this.showNotification(`Purchased ${upgradeKey.replace(/([A-Z])/g, ' $1')}!`, 0x4CAF50);
+            this.updateResourceDisplay();
+        }
+    }
+    showAchievements() {
+        // Remove existing menu
+        this.children.getChildren().forEach((child) => {
+            if (child.getData && child.getData('isAchievementMenu')) {
+                child.destroy();
+            }
+        });
+        const menuBg = this.add.rectangle(512, 350, 600, 500, 0x000000, 0.8)
+            .setData('isAchievementMenu', true);
+        const title = this.add.text(512, 150, 'ACHIEVEMENTS & GOALS', {
+            fontSize: '24px',
+            color: '#FFFFFF'
+        }).setOrigin(0.5).setData('isAchievementMenu', true);
+        const statsText = [
+            `Level: ${this.gameStats.level}`,
+            `Babies Cared For: ${this.gameStats.babiesCaredFor}`,
+            `Tasks Completed: ${this.gameStats.tasksCompleted}`,
+            `Days Survived: ${this.gameStats.daysPassed}`,
+            `Total Money Earned: $${this.gameStats.totalMoney}`,
+            `Current Happiness: ${this.resources.happiness}`,
+            `Achievements Unlocked: ${this.achievements.size}/6`
+        ];
+        let yPos = 200;
+        statsText.forEach(stat => {
+            this.add.text(512, yPos, stat, {
+                fontSize: '14px',
+                color: '#FFFFFF'
+            }).setOrigin(0.5).setData('isAchievementMenu', true);
+            yPos += 25;
+        });
+        const goalText = this.add.text(512, yPos + 20, 'Next Goals:', {
+            fontSize: '16px',
+            color: '#FFD700'
+        }).setOrigin(0.5).setData('isAchievementMenu', true);
+        const goals = [
+            `Reach Level ${this.gameStats.level + 1} (${this.resources.experience}/${(this.gameStats.level) * 100} XP)`,
+            `Care for ${Math.max(10, this.gameStats.babiesCaredFor + 5)} babies`,
+            `Survive ${Math.max(7, this.gameStats.daysPassed + 3)} days`
+        ];
+        goals.forEach((goal, index) => {
+            this.add.text(512, yPos + 50 + (index * 20), goal, {
+                fontSize: '12px',
+                color: '#CCCCCC'
+            }).setOrigin(0.5).setData('isAchievementMenu', true);
+        });
+        const closeBtn = this.add.text(512, 550, 'CLOSE', {
+            fontSize: '18px',
+            color: '#FF4444',
+            backgroundColor: '#FFFFFF',
+            padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive().setData('isAchievementMenu', true);
+        closeBtn.on('pointerdown', () => {
+            this.children.getChildren().forEach((child) => {
+                if (child.getData && child.getData('isAchievementMenu')) {
+                    child.destroy();
+                }
+            });
+        });
+    }
+    addHappinessEffect(x, y) {
+        const heart = this.add.text(x, y, '❤️', {
+            fontSize: '20px'
+        }).setData('isEffect', true);
+        this.tweens.add({
+            targets: heart,
+            y: y - 40,
+            alpha: 0,
+            duration: 1000,
+            onComplete: () => heart.destroy()
+        });
+    }
+    addSleepEffect(x, y) {
+        const zzz = this.add.text(x, y, '💤', {
+            fontSize: '20px'
+        }).setData('isEffect', true);
+        this.tweens.add({
+            targets: zzz,
+            y: y - 40,
+            alpha: 0,
+            duration: 1000,
+            onComplete: () => zzz.destroy()
+        });
+    }
+    addComfortEffect(x, y) {
+        const star = this.add.text(x, y, '⭐', {
+            fontSize: '20px'
+        }).setData('isEffect', true);
+        this.tweens.add({
+            targets: star,
+            y: y - 40,
+            alpha: 0,
+            duration: 1000,
+            onComplete: () => star.destroy()
+        });
+    }
+    playLevelUpEffect() {
+        // Screen flash effect
+        const flash = this.add.rectangle(512, 350, 1024, 700, 0xFFD700, 0.3);
+        this.tweens.add({
+            targets: flash,
+            alpha: 0,
+            duration: 500,
+            onComplete: () => flash.destroy()
+        });
+    }
+    playAchievementEffect() {
+        // Sparkle effect
+        for (let i = 0; i < 10; i++) {
+            const sparkle = this.add.circle(Math.random() * 1024, Math.random() * 700, Math.random() * 5 + 2, 0xFFD700).setData('isEffect', true);
+            this.tweens.add({
+                targets: sparkle,
+                alpha: 0,
+                scaleX: 2,
+                scaleY: 2,
+                duration: 1000,
+                delay: Math.random() * 500,
+                onComplete: () => sparkle.destroy()
+            });
+        }
+    }
+    makeBabyCry(baby) {
+        // Add crying visual effect
+        const cryText = this.add.text(baby.x + 25, baby.y - 15, 'WAH!', {
+            fontSize: '12px',
+            color: '#FF0000',
+            fontStyle: 'bold'
+        }).setData('isCryEffect', true);
+        baby.setData('cryText', cryText);
+        // Make cry text bounce
+        this.tweens.add({
+            targets: cryText,
+            y: baby.y - 25,
+            duration: 500,
+            yoyo: true,
+            repeat: -1
+        });
+    }
+    stopBabyCrying(baby) {
+        const cryText = baby.getData('cryText');
+        if (cryText && cryText.active) {
+            this.tweens.killTweensOf(cryText);
+            cryText.destroy();
+        }
+    }
+    animateCryingBaby(baby) {
+        // Make baby shake when crying
+        if (!baby.getData('isShaking')) {
+            baby.setData('isShaking', true);
+            this.tweens.add({
+                targets: baby,
+                x: baby.x + 2,
+                duration: 100,
+                yoyo: true,
+                repeat: 3,
+                onComplete: () => {
+                    baby.setData('isShaking', false);
+                }
+            });
+        }
+    }
+    showNotification(text, color) {
+        const notification = this.add.text(512, 100 + this.notifications.length * 30, text, {
+            fontSize: '14px',
+            color: '#FFFFFF',
+            backgroundColor: `#${color.toString(16).padStart(6, '0')}`,
+            padding: { x: 10, y: 5 }
+        }).setOrigin(0.5).setData('isNotification', true);
+        this.notifications.push(notification);
+        this.time.delayedCall(3000, () => {
+            const index = this.notifications.indexOf(notification);
+            if (index > -1) {
+                this.notifications.splice(index, 1);
+                if (notification && notification.active) {
+                    notification.destroy();
+                }
             }
         });
     }
