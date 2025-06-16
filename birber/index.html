@@ -206,37 +206,148 @@
             const shuffledTypes = [...birdTypes].sort(() => Math.sin(hash) - 0.5);
             const selectedTypes = [primaryBirdType, ...shuffledTypes.slice(0, 4)];
             
-            // Multiple image sources for better reliability
-            const imageSources = [
-                (type, seed) => `https://picsum.photos/seed/${type}${seed}/400/300`,
-                (type, seed) => `https://loremflickr.com/400/300/${type},bird?random=${seed}`,
-                (type, seed) => `https://source.unsplash.com/featured/400x300/?${type}&${seed}`,
-            ];
-            
-            // Try multiple sources for each image
+            // Try to fetch real bird images, fallback to textures if needed
             const imagePromises = selectedTypes.map(async (birdType, index) => {
                 const seed = Math.abs(hash + index * 1000);
                 const purpose = ['body', 'wings', 'head', 'tail', 'details'][index];
                 
-                // Try each source until one works
-                for (const sourceFunc of imageSources) {
-                    try {
-                        const img = await loadImageWithTimeout(sourceFunc(birdType, seed), 5000);
-                        return { img, type: birdType, purpose };
-                    } catch (error) {
-                        console.log(`Failed to load ${birdType} from source, trying next...`);
-                        continue;
-                    }
+                // Try to get a real bird image first
+                try {
+                    const realBirdImage = await fetchRealBirdImage(birdType, seed);
+                    return { img: realBirdImage, type: birdType, purpose, isReal: true };
+                } catch (error) {
+                    console.log(`Failed to load real ${birdType} image, using procedural texture`);
+                    // Fallback to procedural texture
+                    const img = createBirdTexture(birdType, purpose, seed, description);
+                    return { img, type: birdType, purpose, isReal: false };
                 }
-                
-                // If all sources fail, create a placeholder
-                return createPlaceholderImage(birdType, purpose, seed);
             });
             
-            // Wait for all images to load
+            // Wait for all images/textures to load
             const loadedImages = await Promise.all(imagePromises);
             
             return loadedImages;
+        }
+        
+        async function fetchRealBirdImage(birdType, seed) {
+            // Multiple sources for real bird images
+            const birdImageSources = [
+                // eBird API (reliable bird photography database)
+                async (type, seed) => {
+                    // Try Wikipedia Commons - often has public domain bird images
+                    const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&generator=categorymembers&gcmtitle=Category:${type}&gcmtype=file&gcmlimit=50&iiprop=url&iiurlwidth=400&origin=*`;
+                    
+                    try {
+                        const response = await fetch(wikiUrl);
+                        const data = await response.json();
+                        if (data.query && data.query.pages) {
+                            const pages = Object.values(data.query.pages);
+                            const imagePages = pages.filter(page => page.imageinfo && page.imageinfo[0].thumburl);
+                            if (imagePages.length > 0) {
+                                const randomPage = imagePages[seed % imagePages.length];
+                                return randomPage.imageinfo[0].thumburl;
+                            }
+                        }
+                    } catch (error) {
+                        console.log('Wikipedia Commons failed:', error);
+                    }
+                    throw new Error('No Wikipedia images found');
+                },
+                
+                // Flickr public bird images
+                async (type, seed) => {
+                    // Using Flickr's public feed for bird photos
+                    const flickrUrl = `https://api.flickr.com/services/feeds/photos_public.gne?tags=${type},bird&format=json&nojsoncallback=1`;
+                    
+                    try {
+                        const response = await fetch(flickrUrl);
+                        const data = await response.json();
+                        if (data.items && data.items.length > 0) {
+                            const randomItem = data.items[seed % data.items.length];
+                            // Get medium size image
+                            return randomItem.media.m;
+                        }
+                    } catch (error) {
+                        console.log('Flickr failed:', error);
+                    }
+                    throw new Error('No Flickr images found');
+                },
+                
+                // Alternative: Use a curated list of known bird image URLs
+                async (type, seed) => {
+                    const birdImageUrls = getCuratedBirdImages(type);
+                    if (birdImageUrls.length > 0) {
+                        return birdImageUrls[seed % birdImageUrls.length];
+                    }
+                    throw new Error('No curated images found');
+                }
+            ];
+            
+            // Try each source until one works
+            for (const sourceFunc of birdImageSources) {
+                try {
+                    const imageUrl = await sourceFunc(birdType, seed);
+                    const img = await loadImageWithTimeout(imageUrl, 8000);
+                    
+                    // Verify this is actually an image
+                    if (img.width > 0 && img.height > 0) {
+                        return img;
+                    }
+                } catch (error) {
+                    console.log(`Bird image source failed for ${birdType}:`, error);
+                    continue;
+                }
+            }
+            
+            throw new Error(`Could not load real bird image for ${birdType}`);
+        }
+        
+        function getCuratedBirdImages(birdType) {
+            // Curated list of reliable bird image URLs (public domain/creative commons)
+            const curatedImages = {
+                cardinal: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Northern_Cardinal_Broadside.jpg/400px-Northern_Cardinal_Broadside.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cardinal-male.jpg/400px-Cardinal-male.jpg'
+                ],
+                robin: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Turdus-migratorius-002.jpg/400px-Turdus-migratorius-002.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/American_Robin.jpg/400px-American_Robin.jpg'
+                ],
+                eagle: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bald_Eagle_Portrait.jpg/400px-Bald_Eagle_Portrait.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Bald_Eagle_Alaska.jpg/400px-Bald_Eagle_Alaska.jpg'
+                ],
+                owl: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Great_Horned_Owl.jpg/400px-Great_Horned_Owl.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Great_Grey_Owl_1.jpg/400px-Great_Grey_Owl_1.jpg'
+                ],
+                peacock: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Peacock_Plumage.jpg/400px-Peacock_Plumage.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Indian_Peafowl_Plumage.jpg/400px-Indian_Peafowl_Plumage.jpg'
+                ],
+                flamingo: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/Caribbean_Flamingo.jpg/400px-Caribbean_Flamingo.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Flamingo_Las_Bachas_Beach.jpg/400px-Flamingo_Las_Bachas_Beach.jpg'
+                ],
+                bluejay: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Blue_Jay_in_PP.jpg/400px-Blue_Jay_in_PP.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Blue_jay_in_PP_%28sq%29.jpg/400px-Blue_jay_in_PP_%28sq%29.jpg'
+                ],
+                crow: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Corvus_brachyrhynchos_68317.jpg/400px-Corvus_brachyrhynchos_68317.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/American_Crow_-_natures_pics.jpg/400px-American_Crow_-_natures_pics.jpg'
+                ],
+                duck: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Anas_platyrhynchos_male_female_quadrat.jpg/400px-Anas_platyrhynchos_male_female_quadrat.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Mallard_drake.jpg/400px-Mallard_drake.jpg'
+                ],
+                swan: [
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Mute_Swan_-_St_James%27s_Park%2C_London_-_Nov_2006_edit2.jpg/400px-Mute_Swan_-_St_James%27s_Park%2C_London_-_Nov_2006_edit2.jpg',
+                    'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Cygnus_olor_2_%28Marek_Szczepanek%29.jpg/400px-Cygnus_olor_2_%28Marek_Szczepanek%29.jpg'
+                ]
+            };
+            
+            return curatedImages[birdType] || [];
         }
         
         function loadImageWithTimeout(url, timeout = 5000) {
@@ -262,49 +373,346 @@
             });
         }
         
-        function createPlaceholderImage(birdType, purpose, seed) {
-            // Create a colorful placeholder canvas
-            const placeholderCanvas = document.createElement('canvas');
-            const placeholderCtx = placeholderCanvas.getContext('2d');
-            placeholderCanvas.width = 400;
-            placeholderCanvas.height = 300;
+        function createBirdTexture(birdType, purpose, seed, description) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 400;
+            canvas.height = 300;
             
-            // Generate colors based on bird type and seed
-            const hue = (seed % 360);
-            const saturation = 50 + (seed % 50);
-            const lightness = 40 + (seed % 40);
+            // Get bird-specific colors and patterns
+            const birdColors = getBirdTypeColors(birdType, description);
+            const patterns = getBirdPatterns(birdType, purpose, seed);
             
-            // Create gradient background
-            const gradient = placeholderCtx.createLinearGradient(0, 0, 400, 300);
-            gradient.addColorStop(0, `hsl(${hue}, ${saturation}%, ${lightness}%)`);
-            gradient.addColorStop(1, `hsl(${(hue + 60) % 360}, ${saturation}%, ${lightness + 20}%)`);
+            // Create base texture
+            drawBaseTexture(ctx, birdColors, patterns, seed);
             
-            placeholderCtx.fillStyle = gradient;
-            placeholderCtx.fillRect(0, 0, 400, 300);
-            
-            // Add some texture patterns
-            placeholderCtx.fillStyle = `hsla(${(hue + 120) % 360}, ${saturation}%, ${lightness - 10}%, 0.3)`;
-            for (let i = 0; i < 20; i++) {
-                const x = (seed * i * 17) % 400;
-                const y = (seed * i * 23) % 300;
-                const size = 10 + (seed * i) % 30;
-                placeholderCtx.beginPath();
-                placeholderCtx.arc(x, y, size, 0, Math.PI * 2);
-                placeholderCtx.fill();
+            // Add bird-specific features
+            switch (purpose) {
+                case 'body':
+                    drawBodyTexture(ctx, birdColors, patterns, seed);
+                    break;
+                case 'wings':
+                    drawWingTexture(ctx, birdColors, patterns, seed);
+                    break;
+                case 'head':
+                    drawHeadTexture(ctx, birdColors, patterns, seed);
+                    break;
+                case 'tail':
+                    drawTailTexture(ctx, birdColors, patterns, seed);
+                    break;
+                case 'details':
+                    drawDetailTexture(ctx, birdColors, patterns, seed);
+                    break;
             }
             
-            // Add text label
-            placeholderCtx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            placeholderCtx.font = '16px Arial';
-            placeholderCtx.textAlign = 'center';
-            placeholderCtx.fillText(`${birdType.toUpperCase()}`, 200, 150);
-            placeholderCtx.fillText(`(${purpose})`, 200, 170);
-            
-            // Convert canvas to image
+            // Convert to image
             const img = new Image();
-            img.src = placeholderCanvas.toDataURL();
+            img.src = canvas.toDataURL();
+            return img;
+        }
+        
+        function getBirdTypeColors(birdType, description) {
+            // Extract user-specified colors from description
+            const userColors = extractUserColors(description.toLowerCase());
             
-            return { img, type: birdType, purpose };
+            // Default colors for different bird types
+            const typeColors = {
+                cardinal: { primary: '#DC143C', secondary: '#8B0000', accent: '#2F4F4F' },
+                robin: { primary: '#CD853F', secondary: '#8B4513', accent: '#FF4500' },
+                eagle: { primary: '#8B4513', secondary: '#654321', accent: '#FFFAF0' },
+                hawk: { primary: '#696969', secondary: '#2F4F4F', accent: '#F5DEB3' },
+                owl: { primary: '#8B7355', secondary: '#A0522D', accent: '#FFFAF0' },
+                peacock: { primary: '#008B8B', secondary: '#4682B4', accent: '#FFD700' },
+                flamingo: { primary: '#FF69B4', secondary: '#FF1493', accent: '#FFFAF0' },
+                parrot: { primary: '#32CD32', secondary: '#FF4500', accent: '#FFD700' },
+                bluejay: { primary: '#4169E1', secondary: '#191970', accent: '#FFFAF0' },
+                crow: { primary: '#2F2F2F', secondary: '#000000', accent: '#4169E1' },
+                default: { primary: '#4682B4', secondary: '#2F4F4F', accent: '#F0E68C' }
+            };
+            
+            const colors = typeColors[birdType] || typeColors.default;
+            
+            // Override with user colors if specified
+            if (userColors.length > 0) {
+                colors.primary = userColors[0];
+                if (userColors.length > 1) colors.secondary = userColors[1];
+                if (userColors.length > 2) colors.accent = userColors[2];
+            }
+            
+            return colors;
+        }
+        
+        function getBirdPatterns(birdType, purpose, seed) {
+            const patterns = {
+                hasStripes: false,
+                hasSpots: false,
+                hasIridescence: false,
+                featherDetail: 'medium',
+                texture: 'smooth'
+            };
+            
+            // Bird-specific patterns
+            switch (birdType) {
+                case 'peacock':
+                    patterns.hasIridescence = true;
+                    patterns.featherDetail = 'high';
+                    patterns.hasSpots = purpose === 'tail';
+                    break;
+                case 'owl':
+                    patterns.hasSpots = true;
+                    patterns.featherDetail = 'high';
+                    patterns.texture = 'fluffy';
+                    break;
+                case 'hawk':
+                case 'eagle':
+                    patterns.hasStripes = purpose === 'wings' || purpose === 'tail';
+                    patterns.featherDetail = 'high';
+                    break;
+                case 'woodpecker':
+                    patterns.hasStripes = true;
+                    patterns.hasSpots = purpose === 'head';
+                    break;
+                case 'duck':
+                case 'swan':
+                    patterns.texture = 'sleek';
+                    patterns.hasIridescence = purpose === 'head';
+                    break;
+            }
+            
+            return patterns;
+        }
+        
+        function drawBaseTexture(ctx, colors, patterns, seed) {
+            // Create gradient base
+            const gradient = ctx.createRadialGradient(200, 150, 50, 200, 150, 200);
+            gradient.addColorStop(0, colors.primary);
+            gradient.addColorStop(0.7, colors.secondary);
+            gradient.addColorStop(1, darkenColor(colors.secondary));
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 400, 300);
+            
+            // Add base noise for texture
+            drawNoise(ctx, seed, 0.1);
+        }
+        
+        function drawBodyTexture(ctx, colors, patterns, seed) {
+            // Draw feather-like patterns
+            ctx.globalAlpha = 0.3;
+            for (let i = 0; i < 30; i++) {
+                const x = (seed * i * 17) % 400;
+                const y = (seed * i * 23) % 300;
+                drawFeatherPattern(ctx, x, y, colors.accent, seed + i);
+            }
+            
+            if (patterns.hasSpots) {
+                drawSpotPattern(ctx, colors.accent, seed, 20);
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function drawWingTexture(ctx, colors, patterns, seed) {
+            // Draw wing feather patterns
+            ctx.globalAlpha = 0.4;
+            
+            // Primary feathers
+            for (let i = 0; i < 8; i++) {
+                const x = 50 + i * 40;
+                const y = 100 + Math.sin(seed + i) * 50;
+                drawLongFeather(ctx, x, y, colors.secondary, seed + i);
+            }
+            
+            // Secondary feathers
+            for (let i = 0; i < 12; i++) {
+                const x = 20 + i * 30;
+                const y = 180 + Math.cos(seed + i) * 30;
+                drawShortFeather(ctx, x, y, colors.primary, seed + i * 2);
+            }
+            
+            if (patterns.hasStripes) {
+                drawStripePattern(ctx, colors.accent, seed);
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function drawHeadTexture(ctx, colors, patterns, seed) {
+            // Smooth head texture with subtle patterns
+            ctx.globalAlpha = 0.2;
+            
+            if (patterns.hasSpots) {
+                drawSpotPattern(ctx, colors.accent, seed, 15);
+            } else {
+                // Fine feather detail
+                for (let i = 0; i < 50; i++) {
+                    const x = (seed * i * 7) % 400;
+                    const y = (seed * i * 11) % 300;
+                    drawTinyFeather(ctx, x, y, colors.accent, seed + i);
+                }
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function drawTailTexture(ctx, colors, patterns, seed) {
+            ctx.globalAlpha = 0.5;
+            
+            // Long tail feathers
+            for (let i = 0; i < 6; i++) {
+                const x = 50 + i * 60;
+                const y = 50 + Math.sin(seed + i) * 100;
+                drawLongTailFeather(ctx, x, y, colors.primary, seed + i);
+            }
+            
+            if (patterns.hasIridescence) {
+                drawIridescentPattern(ctx, colors, seed);
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function drawDetailTexture(ctx, colors, patterns, seed) {
+            ctx.globalAlpha = 0.15;
+            
+            // Overlay texture details
+            drawNoise(ctx, seed, 0.05);
+            
+            // Fine detail patterns
+            for (let i = 0; i < 100; i++) {
+                const x = (seed * i * 3) % 400;
+                const y = (seed * i * 5) % 300;
+                const size = 1 + (seed * i) % 3;
+                
+                ctx.fillStyle = colors.accent;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+        
+        function drawFeatherPattern(ctx, x, y, color, seed) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 8 + (seed % 5), 3 + (seed % 3), (seed % 100) / 50, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawLongFeather(ctx, x, y, color, seed) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.quadraticCurveTo(x + 10, y - 20, x + 5, y - 40);
+            ctx.stroke();
+        }
+        
+        function drawShortFeather(ctx, x, y, color, seed) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 6, 2, (seed % 100) / 100 * Math.PI, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawTinyFeather(ctx, x, y, color, seed) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 1 + (seed % 2), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawLongTailFeather(ctx, x, y, color, seed) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.quadraticCurveTo(x + 20, y + 60, x + 10, y + 120);
+            ctx.stroke();
+        }
+        
+        function drawSpotPattern(ctx, color, seed, count) {
+            ctx.fillStyle = color;
+            for (let i = 0; i < count; i++) {
+                const x = (seed * i * 19) % 400;
+                const y = (seed * i * 31) % 300;
+                const size = 3 + (seed * i) % 8;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawStripePattern(ctx, color, seed) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const y = 50 + i * 25;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(400, y + Math.sin(seed + i) * 20);
+                ctx.stroke();
+            }
+        }
+        
+        function drawIridescentPattern(ctx, colors, seed) {
+            const gradient = ctx.createRadialGradient(200, 150, 0, 200, 150, 100);
+            gradient.addColorStop(0, colors.accent);
+            gradient.addColorStop(0.5, colors.primary);
+            gradient.addColorStop(1, colors.secondary);
+            
+            ctx.fillStyle = gradient;
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(0, 0, 400, 300);
+        }
+        
+        function drawNoise(ctx, seed, intensity) {
+            const imageData = ctx.getImageData(0, 0, 400, 300);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = (Math.sin(seed + i / 1000) * 255 * intensity);
+                data[i] += noise;     // red
+                data[i + 1] += noise; // green
+                data[i + 2] += noise; // blue
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        function generateRandomShape(hash, description) {
+            // Use text hash to create consistent random values
+            const rng = (seed) => Math.abs(Math.sin(seed * 12.9898 + description.length * 4.1414) * 43758.5453) % 1;
+            
+            return {
+                // Body proportions (0.5 to 2.0 multipliers)
+                bodyWidth: 0.5 + rng(hash * 1) * 1.5,
+                bodyHeight: 0.5 + rng(hash * 2) * 1.5,
+                bodyRoundness: rng(hash * 3), // 0 = oval, 1 = circle
+                
+                // Head proportions
+                headSize: 0.6 + rng(hash * 4) * 0.8, // 0.6 to 1.4
+                headPosition: -0.3 + rng(hash * 5) * 0.6, // neck length variation
+                
+                // Wing characteristics
+                wingSpan: 0.7 + rng(hash * 6) * 0.8, // 0.7 to 1.5
+                wingAngle: -0.5 + rng(hash * 7) * 1.0, // wing spread
+                wingShape: rng(hash * 8), // 0 = narrow, 1 = broad
+                
+                // Tail characteristics  
+                tailLength: 0.5 + rng(hash * 9) * 1.5, // 0.5 to 2.0
+                tailSpread: rng(hash * 10), // 0 = narrow, 1 = fan-like
+                tailCurve: -0.5 + rng(hash * 11) * 1.0, // upward/downward curve
+                
+                // Leg characteristics
+                legLength: 0.6 + rng(hash * 12) * 0.8, // 0.6 to 1.4
+                legPosition: -0.2 + rng(hash * 13) * 0.4, // forward/backward stance
+                
+                // Overall posture
+                posture: rng(hash * 14), // 0 = upright, 1 = horizontal
+                asymmetry: rng(hash * 15) * 0.3, // slight asymmetric variations
+            };
         }
         
         function showLoading(show) {
@@ -355,6 +763,9 @@
             const hasSpots = words.includes('spot') || words.includes('dot') || words.includes('speckle') || imageAnalysis.hasSpots;
             const hasStripes = words.includes('stripe') || words.includes('band') || words.includes('zebra') || imageAnalysis.hasStripes;
             
+            // Generate randomized shape profile using text as seed
+            const shapeProfile = generateRandomShape(hash, description);
+            
             const birdNames = ['Skyweaver', 'Cloudwing', 'Featherbeam', 'Wingwhisper', 'Airglow', 'Stormchaser', 
                               'Sunfeather', 'Moonwing', 'Starwhisper', 'Dreamsoar', 'Mistral', 'Aurora'];
             const birdName = birdNames[Math.abs(hash * 7) % birdNames.length];
@@ -374,7 +785,8 @@
                 description,
                 hash,
                 referenceImage: imageAnalysis,
-                birdImages
+                birdImages,
+                shapeProfile
             };
         }
         
@@ -388,54 +800,82 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Define bird composition layout
+            // Define bird composition layout with randomized shape
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const sizeMultiplier = birdData.size === 'large' ? 1.4 : birdData.size === 'small' ? 0.6 : 1;
+            const shape = birdData.shapeProfile;
             
-            // Extract and place different bird parts
+            // Apply posture adjustment
+            const postureOffset = (shape.posture - 0.5) * 40 * sizeMultiplier;
+            const bodyY = centerY + postureOffset;
+            
+            // Extract and place different bird parts with shape variations
             for (const imageData of birdImages) {
                 const { img, purpose } = imageData;
                 
                 switch (purpose) {
                     case 'body':
-                        await drawImagePart(img, centerX - 50 * sizeMultiplier, centerY - 20 * sizeMultiplier, 
-                                          100 * sizeMultiplier, 80 * sizeMultiplier, 'center');
+                        const bodyWidth = 100 * sizeMultiplier * shape.bodyWidth;
+                        const bodyHeight = 80 * sizeMultiplier * shape.bodyHeight;
+                        const bodyStyle = shape.bodyRoundness > 0.6 ? 'circular' : 'center';
+                        
+                        await drawImagePart(img, centerX - bodyWidth/2, bodyY - bodyHeight/2, 
+                                          bodyWidth, bodyHeight, bodyStyle);
                         break;
+                        
                     case 'wings':
-                        // Left wing
-                        await drawImagePart(img, centerX - 80 * sizeMultiplier, centerY - 40 * sizeMultiplier, 
-                                          60 * sizeMultiplier, 50 * sizeMultiplier, 'wings', -0.3);
-                        // Right wing
-                        await drawImagePart(img, centerX + 20 * sizeMultiplier, centerY - 40 * sizeMultiplier, 
-                                          60 * sizeMultiplier, 50 * sizeMultiplier, 'wings', 0.3);
+                        const wingSpan = 60 * sizeMultiplier * shape.wingSpan;
+                        const wingHeight = 50 * sizeMultiplier * (shape.wingShape * 0.5 + 0.5);
+                        const wingAngle = shape.wingAngle;
+                        const wingY = bodyY - 20 * sizeMultiplier;
+                        
+                        // Left wing with shape variations
+                        await drawImagePart(img, centerX - wingSpan - 20 * sizeMultiplier, wingY, 
+                                          wingSpan, wingHeight, 'wings', -0.3 + wingAngle);
+                        // Right wing with asymmetry
+                        await drawImagePart(img, centerX + 20 * sizeMultiplier, wingY + shape.asymmetry * 10, 
+                                          wingSpan, wingHeight, 'wings', 0.3 + wingAngle);
                         break;
+                        
                     case 'head':
-                        await drawImagePart(img, centerX - 25 * sizeMultiplier, centerY - 70 * sizeMultiplier, 
-                                          50 * sizeMultiplier, 50 * sizeMultiplier, 'circular');
+                        const headSize = 50 * sizeMultiplier * shape.headSize;
+                        const headY = bodyY - 50 * sizeMultiplier + shape.headPosition * 30 * sizeMultiplier;
+                        
+                        await drawImagePart(img, centerX - headSize/2, headY - headSize/2, 
+                                          headSize, headSize, 'circular');
                         break;
+                        
                     case 'tail':
-                        if (birdData.hasLongTail) {
-                            await drawImagePart(img, centerX - 120 * sizeMultiplier, centerY - 10 * sizeMultiplier, 
-                                              80 * sizeMultiplier, 40 * sizeMultiplier, 'elongated');
-                        } else {
-                            await drawImagePart(img, centerX - 90 * sizeMultiplier, centerY + 10 * sizeMultiplier, 
-                                              50 * sizeMultiplier, 30 * sizeMultiplier, 'feathers');
-                        }
+                        const tailLength = 80 * sizeMultiplier * shape.tailLength;
+                        const tailHeight = shape.tailSpread > 0.5 ? 60 * sizeMultiplier : 30 * sizeMultiplier;
+                        const tailY = bodyY + shape.tailCurve * 20 * sizeMultiplier;
+                        const tailStyle = shape.tailSpread > 0.5 ? 'fan' : 'elongated';
+                        
+                        await drawImagePart(img, centerX - tailLength - 40 * sizeMultiplier, tailY, 
+                                          tailLength, tailHeight, tailStyle);
                         break;
+                        
                     case 'details':
-                        // Add texture details on top
+                        // Add texture details on top with shape awareness
                         ctx.globalAlpha = 0.3;
-                        await drawImagePart(img, centerX - 40 * sizeMultiplier, centerY - 30 * sizeMultiplier, 
-                                          80 * sizeMultiplier, 60 * sizeMultiplier, 'overlay');
+                        const detailWidth = 80 * sizeMultiplier * shape.bodyWidth;
+                        const detailHeight = 60 * sizeMultiplier * shape.bodyHeight;
+                        
+                        await drawImagePart(img, centerX - detailWidth/2, bodyY - detailHeight/2, 
+                                          detailWidth, detailHeight, 'overlay');
                         ctx.globalAlpha = 1.0;
                         break;
                 }
             }
             
-            // Add simple drawn elements for beak and legs
-            drawSimpleBeak(centerX + 25 * sizeMultiplier, centerY - 45 * sizeMultiplier, birdData, sizeMultiplier);
-            drawSimpleLegs(centerX, centerY + 40 * sizeMultiplier, sizeMultiplier);
+            // Add simple drawn elements for beak and legs with shape variations
+            const beakY = bodyY - 30 * sizeMultiplier + shape.headPosition * 30 * sizeMultiplier;
+            const legY = bodyY + 30 * sizeMultiplier * shape.bodyHeight;
+            const legOffset = shape.legPosition * 20 * sizeMultiplier;
+            
+            drawSimpleBeak(centerX + 25 * sizeMultiplier * shape.headSize, beakY, birdData, sizeMultiplier);
+            drawSimpleLegs(centerX + legOffset, legY, sizeMultiplier * shape.legLength);
         }
         
         async function drawImagePart(img, x, y, width, height, style = 'rectangle', rotation = 0) {
@@ -468,6 +908,13 @@
                     ctx.moveTo(x, y + height/2);
                     ctx.quadraticCurveTo(x + width/3, y, x + width, y + height/3);
                     ctx.quadraticCurveTo(x + width*2/3, y + height, x, y + height/2);
+                    break;
+                case 'fan':
+                    // Fan-like tail shape
+                    ctx.moveTo(x + width, y + height/2);
+                    ctx.quadraticCurveTo(x + width/2, y, x, y + height/4);
+                    ctx.quadraticCurveTo(x + width/3, y + height/2, x, y + height*3/4);
+                    ctx.quadraticCurveTo(x + width/2, y + height, x + width, y + height/2);
                     break;
                 case 'overlay':
                     ctx.rect(x, y, width, height);
@@ -1009,10 +1456,14 @@
             
             let details = `This magnificent ${birdData.size} bird features rich plumage with ${birdData.hasFeatherDetails ? 'intricate feather patterns' : 'smooth feathers'}. `;
             
-            if (birdData.referenceImage) {
-                details += `Inspired by real bird imagery, it `;
+            // Check how many real images were used
+            const realImageCount = birdData.birdImages ? birdData.birdImages.filter(img => img.isReal).length : 0;
+            const totalImages = birdData.birdImages ? birdData.birdImages.length : 0;
+            
+            if (realImageCount > 0) {
+                details += `Created using ${realImageCount}/${totalImages} real bird photographs, it `;
             } else {
-                details += `It `;
+                details += `Created with procedural bird textures, it `;
             }
             
             details += `has a ${birdData.beakType} beak`;
@@ -1025,8 +1476,10 @@
             details += '. ';
             details += birdData.isMajestic ? 'A truly majestic creature!' : 'A beautiful bird!';
             
-            if (birdData.referenceImage) {
-                details += ' Generated using colors and patterns from real bird photography.';
+            if (realImageCount > 0) {
+                details += ` Collaged from authentic bird photography${realImageCount < totalImages ? ' with procedural enhancements' : ''}.`;
+            } else {
+                details += ' Generated with realistic bird-like textures and patterns.';
             }
             
             document.getElementById('birdDetails').textContent = details;
