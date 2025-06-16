@@ -8,6 +8,10 @@ class BabyGame extends Phaser.Scene {
         this.gridHeight = 12;
         this.placementMode = null;
         this.selectedHuman = null;
+        this.actionMenuVisible = false;
+        this.actionMenuTarget = null;
+        this.actionMenuObjects = [];
+        this.tooltip = null;
         this.resources = {
             money: 500,
             diapers: 20,
@@ -239,12 +243,64 @@ class BabyGame extends Phaser.Scene {
         achieveBtn.on('pointerdown', () => {
             this.showAchievements();
         });
+        // Second row of buttons for purchasable items
+        const buttonY2 = buttonY + 50;
+        let buttonX2 = 10;
+        const buyStationBtn = this.add.text(buttonX2, buttonY2, 'Buy Feeding Station ($300)', {
+            fontSize: '12px',
+            color: '#FFFFFF',
+            backgroundColor: '#2196F3',
+            padding: { x: 8, y: 4 }
+        }).setInteractive();
+        buyStationBtn.on('pointerdown', () => {
+            this.buyItem('feeding_station', 300);
+        });
+        // Add tooltip for Feeding Station
+        buyStationBtn.on('pointerover', () => {
+            this.showTooltip(buyStationBtn.x, buyStationBtn.y - 40, 'Feeding Station ($300)\nCreates formula for babies.\nHelps keep babies fed and happy.');
+        });
+        buyStationBtn.on('pointerout', () => {
+            this.hideTooltip();
+        });
+        buttonX2 += 200;
+        const buyToyBtn = this.add.text(buttonX2, buttonY2, 'Buy Toy Box ($150)', {
+            fontSize: '12px',
+            color: '#FFFFFF',
+            backgroundColor: '#9C27B0',
+            padding: { x: 8, y: 4 }
+        }).setInteractive();
+        buyToyBtn.on('pointerdown', () => {
+            this.buyItem('toy_box', 150);
+        });
+        // Add tooltip for Toy Box
+        buyToyBtn.on('pointerover', () => {
+            this.showTooltip(buyToyBtn.x, buyToyBtn.y - 40, 'Toy Box ($150)\nProvides entertainment for babies.\nBoosts happiness and keeps babies occupied.');
+        });
+        buyToyBtn.on('pointerout', () => {
+            this.hideTooltip();
+        });
+        buttonX2 += 160;
+        const buyChangingBtn = this.add.text(buttonX2, buttonY2, 'Buy Changing Table ($250)', {
+            fontSize: '12px',
+            color: '#FFFFFF',
+            backgroundColor: '#607D8B',
+            padding: { x: 8, y: 4 }
+        }).setInteractive();
+        buyChangingBtn.on('pointerdown', () => {
+            this.buyItem('changing_table', 250);
+        });
+        // Add tooltip for Changing Table
+        buyChangingBtn.on('pointerover', () => {
+            this.showTooltip(buyChangingBtn.x, buyChangingBtn.y - 40, 'Changing Table ($250)\nEssential for baby hygiene.\nEnables diaper changing and baby care.');
+        });
+        buyChangingBtn.on('pointerout', () => {
+            this.hideTooltip();
+        });
         this.updateResourceDisplay();
     }
     placeInitialEntities() {
         this.createBaby(2, 2, 'Emma');
         this.createHuman(4.5, 4.5, 'Sarah'); // Humans can be positioned between grid cells
-        this.createFeedingStation(6, 2);
     }
     createBaby(gridX, gridY, name) {
         const worldX = gridX * this.gridSize + this.gridSize / 2;
@@ -273,6 +329,13 @@ class BabyGame extends Phaser.Scene {
         baby.setData('leftEye', leftEye);
         baby.setData('rightEye', rightEye);
         baby.setData('mouth', mouth);
+        // Add hover tooltip to show baby state
+        baby.on('pointerover', () => {
+            this.showBabyTooltip(baby);
+        });
+        baby.on('pointerout', () => {
+            this.hideTooltip();
+        });
         // Click handling is done by grid-based system in setupInput
         this.entities.set(`baby_${gridX}_${gridY}`, baby);
         // Add name label with background
@@ -375,8 +438,79 @@ class BabyGame extends Phaser.Scene {
         }).setOrigin(0.5);
         station.setData('statusLabel', statusLabel);
     }
+    createToyBox(gridX, gridY) {
+        const worldX = gridX * this.gridSize + this.gridSize / 2;
+        const worldY = gridY * this.gridSize + this.gridSize / 2;
+        // Add shadow
+        const shadow = this.add.rectangle(worldX + 3, worldY + 3, 58, 58, 0x000000, 0.2);
+        // Create main toy box body
+        const toyBox = this.add.rectangle(worldX, worldY, 56, 56, 0x9C27B0);
+        toyBox.setStrokeStyle(3, 0x7B1FA2);
+        toyBox.setInteractive();
+        toyBox.setData('type', 'toy_box');
+        toyBox.setData('happiness_boost', 25);
+        toyBox.setData('shadow', shadow);
+        // Add toy details
+        const lid = this.add.rectangle(worldX, worldY - 15, 50, 12, 0xBA68C8);
+        const handle = this.add.rectangle(worldX, worldY - 15, 8, 6, 0x7B1FA2);
+        toyBox.setData('lid', lid);
+        toyBox.setData('handle', handle);
+        this.entities.set(`toy_${gridX}_${gridY}`, toyBox);
+        // Add toy icon
+        this.add.text(worldX, worldY + 2, '🧸', {
+            fontSize: '20px'
+        }).setOrigin(0.5);
+        // Add status indicator
+        const statusLabel = this.add.text(worldX, worldY - 35, 'Toy Box', {
+            fontSize: '10px',
+            color: '#FFFFFF',
+            backgroundColor: '#9C27B0',
+            padding: { x: 4, y: 2 }
+        }).setOrigin(0.5);
+        toyBox.setData('statusLabel', statusLabel);
+    }
+    createChangingTable(gridX, gridY) {
+        const worldX = gridX * this.gridSize + this.gridSize / 2;
+        const worldY = gridY * this.gridSize + this.gridSize / 2;
+        // Add shadow
+        const shadow = this.add.rectangle(worldX + 3, worldY + 3, 58, 58, 0x000000, 0.2);
+        // Create main changing table body
+        const table = this.add.rectangle(worldX, worldY, 56, 56, 0x607D8B);
+        table.setStrokeStyle(3, 0x455A64);
+        table.setInteractive();
+        table.setData('type', 'changing_table');
+        table.setData('efficiency_boost', 20);
+        table.setData('shadow', shadow);
+        // Add table details
+        const surface = this.add.rectangle(worldX, worldY - 10, 52, 20, 0x78909C);
+        const storage = this.add.rectangle(worldX, worldY + 15, 48, 15, 0x546E7A);
+        table.setData('surface', surface);
+        table.setData('storage', storage);
+        this.entities.set(`changing_${gridX}_${gridY}`, table);
+        // Add changing icon
+        this.add.text(worldX, worldY + 2, '👶', {
+            fontSize: '20px'
+        }).setOrigin(0.5);
+        // Add status indicator
+        const statusLabel = this.add.text(worldX, worldY - 35, 'Changing Table', {
+            fontSize: '10px',
+            color: '#FFFFFF',
+            backgroundColor: '#607D8B',
+            padding: { x: 4, y: 2 }
+        }).setOrigin(0.5);
+        table.setData('statusLabel', statusLabel);
+    }
     setupInput() {
         this.input.on('pointerdown', (pointer) => {
+            // Close action menu if clicking elsewhere (except on menu items)
+            if (this.actionMenuVisible) {
+                const clickedObjects = this.input.hitTestPointer(pointer);
+                const clickedOnMenu = clickedObjects.some((obj) => obj.getData && obj.getData('isActionMenu'));
+                if (!clickedOnMenu) {
+                    this.hideActionMenu();
+                    return;
+                }
+            }
             if (this.placementMode) {
                 const gridX = Math.floor(pointer.x / this.gridSize);
                 const gridY = Math.floor(pointer.y / this.gridSize);
@@ -395,8 +529,14 @@ class BabyGame extends Phaser.Scene {
         });
     }
     handlePlacement(gridX, gridY) {
-        const key = `baby_${gridX}_${gridY}`;
-        if (this.entities.has(key)) {
+        // Check if space is occupied by any entity
+        const possibleKeys = [
+            `baby_${gridX}_${gridY}`,
+            `station_${gridX}_${gridY}`,
+            `toy_${gridX}_${gridY}`,
+            `changing_${gridX}_${gridY}`
+        ];
+        if (possibleKeys.some(key => this.entities.has(key))) {
             this.showMessage('Space occupied!');
             return;
         }
@@ -404,6 +544,21 @@ class BabyGame extends Phaser.Scene {
             const babyCount = Array.from(this.entities.keys()).filter(k => k.startsWith('baby_')).length;
             this.createBaby(gridX, gridY, `Baby ${babyCount + 1}`);
             this.showMessage(`Placed baby at grid ${gridX}, ${gridY}`);
+            this.placementMode = null;
+        }
+        else if (this.placementMode === 'feeding_station') {
+            this.createFeedingStation(gridX, gridY);
+            this.showMessage(`Placed Feeding Station at grid ${gridX}, ${gridY}`);
+            this.placementMode = null;
+        }
+        else if (this.placementMode === 'toy_box') {
+            this.createToyBox(gridX, gridY);
+            this.showMessage(`Placed Toy Box at grid ${gridX}, ${gridY}`);
+            this.placementMode = null;
+        }
+        else if (this.placementMode === 'changing_table') {
+            this.createChangingTable(gridX, gridY);
+            this.showMessage(`Placed Changing Table at grid ${gridX}, ${gridY}`);
             this.placementMode = null;
         }
     }
@@ -452,14 +607,22 @@ class BabyGame extends Phaser.Scene {
         const gridY = Math.floor(worldY / this.gridSize);
         const babyKey = `baby_${gridX}_${gridY}`;
         const stationKey = `station_${gridX}_${gridY}`;
+        const toyKey = `toy_${gridX}_${gridY}`;
+        const changingKey = `changing_${gridX}_${gridY}`;
         if (this.entities.has(babyKey)) {
-            this.assignBabyTask(this.selectedHuman, babyKey);
+            this.showActionMenu(worldX, worldY, this.entities.get(babyKey), 'baby');
         }
         else if (this.entities.has(stationKey)) {
-            this.assignStationTask(this.selectedHuman, stationKey);
+            this.showActionMenu(worldX, worldY, this.entities.get(stationKey), 'station');
+        }
+        else if (this.entities.has(toyKey)) {
+            this.showActionMenu(worldX, worldY, this.entities.get(toyKey), 'toy_box');
+        }
+        else if (this.entities.has(changingKey)) {
+            this.showActionMenu(worldX, worldY, this.entities.get(changingKey), 'changing_table');
         }
         else {
-            this.showMessage('Click on a baby or feeding station to assign a task.');
+            this.showMessage('Click on a baby or item to assign a task.');
         }
     }
     assignBabyTask(human, babyKey) {
@@ -525,6 +688,192 @@ class BabyGame extends Phaser.Scene {
         this.resources.money -= 200;
         this.updateResourceDisplay();
         this.showMessage(`Recruited ${name}!`);
+    }
+    buyItem(itemType, cost) {
+        if (this.resources.money < cost) {
+            this.showMessage(`Not enough money! Need $${cost}.`);
+            return;
+        }
+        this.placementMode = itemType;
+        this.resources.money -= cost;
+        this.updateResourceDisplay();
+        const itemName = this.getItemDisplayName(itemType);
+        this.showMessage(`Purchased ${itemName}! Click on grid to place it.`);
+    }
+    getItemDisplayName(itemType) {
+        switch (itemType) {
+            case 'feeding_station': return 'Feeding Station';
+            case 'toy_box': return 'Toy Box';
+            case 'changing_table': return 'Changing Table';
+            default: return itemType.replace('_', ' ');
+        }
+    }
+    showActionMenu(worldX, worldY, target, targetType) {
+        // Close any existing action menu
+        this.hideActionMenu();
+        this.actionMenuVisible = true;
+        this.actionMenuTarget = target;
+        this.actionMenuObjects = [];
+        let actions = [];
+        if (targetType === 'baby') {
+            actions = ['feed', 'comfort', 'sleep'];
+        }
+        else if (targetType === 'station') {
+            actions = ['make_formula', 'refill_water', 'operate_station'];
+        }
+        else if (targetType === 'toy_box') {
+            actions = ['play_with_toys', 'clean_toys', 'organize_toys'];
+        }
+        else if (targetType === 'changing_table') {
+            actions = ['change_diaper', 'clean_table', 'restock_supplies'];
+        }
+        // Position menu near the clicked target but avoid screen edges
+        const menuX = Math.min(worldX + 50, 900);
+        const menuY = Math.max(worldY - 20, 50);
+        // Create menu background
+        const menuBg = this.add.rectangle(menuX, menuY, 150, actions.length * 35 + 20, 0x000000, 0.9)
+            .setOrigin(0)
+            .setData('isActionMenu', true);
+        this.actionMenuObjects.push(menuBg);
+        // Create menu title
+        const targetName = target.getData('name') || (targetType === 'station' ? 'Feeding Station' : 'Unknown');
+        const menuTitle = this.add.text(menuX + 75, menuY + 15, `Actions for ${targetName}`, {
+            fontSize: '12px',
+            color: '#FFFFFF'
+        }).setOrigin(0.5).setData('isActionMenu', true);
+        this.actionMenuObjects.push(menuTitle);
+        // Create action buttons
+        actions.forEach((action, index) => {
+            const buttonY = menuY + 35 + (index * 30);
+            const buttonBg = this.add.rectangle(menuX + 75, buttonY, 130, 25, 0x4CAF50, 1)
+                .setInteractive()
+                .setData('isActionMenu', true);
+            this.actionMenuObjects.push(buttonBg);
+            const buttonText = this.add.text(menuX + 75, buttonY, this.formatActionName(action), {
+                fontSize: '11px',
+                color: '#FFFFFF'
+            }).setOrigin(0.5).setData('isActionMenu', true);
+            this.actionMenuObjects.push(buttonText);
+            buttonBg.on('pointerdown', () => {
+                this.selectAction(action, target, targetType);
+            });
+            buttonBg.on('pointerover', () => {
+                buttonBg.setFillStyle(0x45A049);
+            });
+            buttonBg.on('pointerout', () => {
+                buttonBg.setFillStyle(0x4CAF50);
+            });
+        });
+        // Add cancel button
+        const cancelY = menuY + 35 + (actions.length * 30);
+        const cancelBg = this.add.rectangle(menuX + 75, cancelY, 130, 25, 0xFF4444, 1)
+            .setInteractive()
+            .setData('isActionMenu', true);
+        this.actionMenuObjects.push(cancelBg);
+        const cancelText = this.add.text(menuX + 75, cancelY, 'Cancel', {
+            fontSize: '11px',
+            color: '#FFFFFF'
+        }).setOrigin(0.5).setData('isActionMenu', true);
+        this.actionMenuObjects.push(cancelText);
+        cancelBg.on('pointerdown', () => {
+            this.hideActionMenu();
+        });
+        cancelBg.on('pointerover', () => {
+            cancelBg.setFillStyle(0xE53935);
+        });
+        cancelBg.on('pointerout', () => {
+            cancelBg.setFillStyle(0xFF4444);
+        });
+    }
+    hideActionMenu() {
+        if (this.actionMenuVisible) {
+            // Destroy all tracked action menu objects
+            this.actionMenuObjects.forEach((obj) => {
+                if (obj && obj.destroy) {
+                    obj.destroy();
+                }
+            });
+            this.actionMenuObjects = [];
+            this.actionMenuVisible = false;
+            this.actionMenuTarget = null;
+        }
+    }
+    formatActionName(action) {
+        switch (action) {
+            case 'feed': return '🍼 Feed Baby';
+            case 'comfort': return '❤️ Comfort Baby';
+            case 'sleep': return '💤 Help Sleep';
+            case 'make_formula': return '🥛 Make Formula';
+            case 'refill_water': return '💧 Refill Water';
+            case 'operate_station': return '⚙️ Operate Station';
+            case 'play_with_toys': return '🧸 Play with Toys';
+            case 'clean_toys': return '🧽 Clean Toys';
+            case 'organize_toys': return '📦 Organize Toys';
+            case 'change_diaper': return '👶 Change Diaper';
+            case 'clean_table': return '🧹 Clean Table';
+            case 'restock_supplies': return '📋 Restock Supplies';
+            default: return action.replace('_', ' ');
+        }
+    }
+    selectAction(action, target, targetType) {
+        this.hideActionMenu();
+        if (!this.selectedHuman)
+            return;
+        // Create the task based on selected action
+        let task;
+        if (targetType === 'baby') {
+            const babyName = target.getData('name');
+            task = {
+                type: action,
+                targetId: this.getEntityKey(target),
+                targetName: babyName,
+                targetX: target.x,
+                targetY: target.y
+            };
+        }
+        else if (targetType === 'station') {
+            task = {
+                type: action,
+                targetId: this.getEntityKey(target),
+                targetName: 'Feeding Station',
+                targetX: target.x,
+                targetY: target.y
+            };
+        }
+        else if (targetType === 'toy_box') {
+            task = {
+                type: action,
+                targetId: this.getEntityKey(target),
+                targetName: 'Toy Box',
+                targetX: target.x,
+                targetY: target.y
+            };
+        }
+        else if (targetType === 'changing_table') {
+            task = {
+                type: action,
+                targetId: this.getEntityKey(target),
+                targetName: 'Changing Table',
+                targetX: target.x,
+                targetY: target.y
+            };
+        }
+        if (task) {
+            const taskQueue = this.selectedHuman.getData('taskQueue');
+            taskQueue.push(task);
+            this.selectedHuman.setData('taskQueue', taskQueue);
+            const humanName = this.selectedHuman.getData('name');
+            this.showMessage(`${humanName} assigned to ${this.formatActionName(action)}. Queue: ${taskQueue.length}/3`);
+        }
+    }
+    getEntityKey(entity) {
+        // Find the key for this entity in the entities map
+        for (const [key, value] of this.entities.entries()) {
+            if (value === entity) {
+                return key;
+            }
+        }
+        return '';
     }
     displayHumanStatus(human) {
         const name = human.getData('name');
@@ -924,9 +1273,9 @@ class BabyGame extends Phaser.Scene {
             { message: 'Volunteer helper reduces stress!', money: 0, happiness: 15 }
         ];
         const event = events[Math.floor(Math.random() * events.length)];
-        this.resources.money += event.money || 0;
-        this.resources.happiness += event.happiness || 0;
-        if (event.formula)
+        this.resources.money += event.money;
+        this.resources.happiness += event.happiness;
+        if (event.formula !== undefined)
             this.resources.formula += event.formula;
         this.showNotification(event.message, 0xFF9800);
     }
@@ -1189,9 +1538,8 @@ class BabyGame extends Phaser.Scene {
                 tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
                 if (Math.random() < 0.3) {
                     this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '💕', {
-                        fontSize: '12px',
-                        alpha: 0.4
-                    }).setOrigin(0.5);
+                        fontSize: '12px'
+                    }).setOrigin(0.5).setAlpha(0.4);
                 }
                 break;
             case 1:
@@ -1200,9 +1548,8 @@ class BabyGame extends Phaser.Scene {
                 tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
                 if (Math.random() < 0.2) {
                     this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '⭐', {
-                        fontSize: '10px',
-                        alpha: 0.5
-                    }).setOrigin(0.5);
+                        fontSize: '10px'
+                    }).setOrigin(0.5).setAlpha(0.5);
                 }
                 break;
             case 2:
@@ -1211,9 +1558,8 @@ class BabyGame extends Phaser.Scene {
                 tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
                 if (Math.random() < 0.25) {
                     this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '☁️', {
-                        fontSize: '10px',
-                        alpha: 0.4
-                    }).setOrigin(0.5);
+                        fontSize: '10px'
+                    }).setOrigin(0.5).setAlpha(0.4);
                 }
                 break;
             case 3:
@@ -1222,9 +1568,8 @@ class BabyGame extends Phaser.Scene {
                 tileGraphics.fillRect(worldX + 2, worldY + 2, tileSize - 4, tileSize - 4);
                 if (Math.random() < 0.2) {
                     this.add.text(worldX + tileSize / 2, worldY + tileSize / 2, '🌙', {
-                        fontSize: '8px',
-                        alpha: 0.5
-                    }).setOrigin(0.5);
+                        fontSize: '8px'
+                    }).setOrigin(0.5).setAlpha(0.5);
                 }
                 break;
         }
@@ -1247,44 +1592,36 @@ class BabyGame extends Phaser.Scene {
     addCornerDecorations(gameWidth, gameHeight) {
         // Top-left corner - baby bottle
         this.add.text(20, 20, '🍼', {
-            fontSize: '24px',
-            alpha: 0.6
-        });
+            fontSize: '24px'
+        }).setAlpha(0.6);
         // Top-right corner - teddy bear
         this.add.text(gameWidth - 40, 20, '🧸', {
-            fontSize: '24px',
-            alpha: 0.6
-        });
+            fontSize: '24px'
+        }).setAlpha(0.6);
         // Bottom-left corner - rattle
         this.add.text(20, gameHeight - 40, '🪀', {
-            fontSize: '24px',
-            alpha: 0.6
-        });
+            fontSize: '24px'
+        }).setAlpha(0.6);
         // Bottom-right corner - pacifier
         this.add.text(gameWidth - 40, gameHeight - 40, '🍼', {
-            fontSize: '24px',
-            alpha: 0.6
-        });
+            fontSize: '24px'
+        }).setAlpha(0.6);
         // Add playful border decorations
         for (let x = 80; x < gameWidth - 80; x += 120) {
             this.add.text(x, 15, '🌈', {
-                fontSize: '16px',
-                alpha: 0.5
-            });
+                fontSize: '16px'
+            }).setAlpha(0.5);
             this.add.text(x, gameHeight - 25, '🦋', {
-                fontSize: '14px',
-                alpha: 0.5
-            });
+                fontSize: '14px'
+            }).setAlpha(0.5);
         }
         for (let y = 80; y < gameHeight - 80; y += 120) {
             this.add.text(15, y, '🎈', {
-                fontSize: '16px',
-                alpha: 0.5
-            });
+                fontSize: '16px'
+            }).setAlpha(0.5);
             this.add.text(gameWidth - 25, y, '🌸', {
-                fontSize: '14px',
-                alpha: 0.5
-            });
+                fontSize: '14px'
+            }).setAlpha(0.5);
         }
     }
     animateCryingBaby(baby) {
@@ -1321,13 +1658,65 @@ class BabyGame extends Phaser.Scene {
             }
         });
     }
+    showTooltip(x, y, text) {
+        this.hideTooltip(); // Hide any existing tooltip
+        this.tooltip = this.add.text(x, y, text, {
+            fontSize: '11px',
+            color: '#FFFFFF',
+            backgroundColor: '#333333',
+            padding: { x: 8, y: 6 },
+            stroke: '#FFFFFF',
+            strokeThickness: 1
+        }).setOrigin(0, 1).setDepth(1000);
+        // Ensure tooltip stays within screen bounds
+        const bounds = this.tooltip.getBounds();
+        if (bounds.right > 1024) {
+            this.tooltip.x = 1024 - bounds.width;
+        }
+        if (bounds.left < 0) {
+            this.tooltip.x = 0;
+        }
+        if (bounds.top < 0) {
+            this.tooltip.y = bounds.height;
+        }
+    }
+    hideTooltip() {
+        if (this.tooltip) {
+            this.tooltip.destroy();
+            this.tooltip = null;
+        }
+    }
+    showBabyTooltip(baby) {
+        const name = baby.getData('name');
+        const hunger = baby.getData('hunger');
+        const happiness = baby.getData('happiness');
+        const sleepy = baby.getData('sleepy');
+        const crying = baby.getData('crying');
+        const personalityType = baby.getData('personalityType');
+        // Get personality description
+        const personalities = ['Easy', 'Normal', 'Difficult'];
+        const personalityDesc = personalities[personalityType] || 'Unknown';
+        // Create status indicators with emoji
+        const hungerStatus = hunger > 80 ? '🍼 Very Hungry' :
+            hunger > 60 ? '😋 Hungry' :
+                hunger > 30 ? '😊 Fed' : '😌 Full';
+        const happinessStatus = happiness > 80 ? '😄 Very Happy' :
+            happiness > 60 ? '😊 Happy' :
+                happiness > 30 ? '😐 Neutral' : '😢 Sad';
+        const sleepStatus = sleepy > 80 ? '😴 Very Sleepy' :
+            sleepy > 60 ? '🥱 Tired' :
+                sleepy > 30 ? '😊 Rested' : '⚡ Energetic';
+        const cryingStatus = crying ? '😭 CRYING' : '😌 Calm';
+        const tooltipText = `${name} (${personalityDesc})\n${hungerStatus}\n${happinessStatus}\n${sleepStatus}\n${cryingStatus}`;
+        this.showTooltip(baby.x + 30, baby.y - 40, tooltipText);
+    }
 }
 // Initialize the game
 console.log('Starting Whine Time - Baby Care Factory Game...');
 const config = {
     type: Phaser.AUTO,
     width: 1024,
-    height: 900,
+    height: 980,
     parent: 'game-container',
     backgroundColor: '#87CEEB',
     scene: BabyGame,

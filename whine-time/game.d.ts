@@ -1,4 +1,3 @@
-declare var Phaser: any;
 declare class BabyGame extends Phaser.Scene {
     private entities;
     private statusText;
@@ -9,6 +8,10 @@ declare class BabyGame extends Phaser.Scene {
     private placementMode;
     private humans;
     private selectedHuman;
+    private actionMenuVisible;
+    private actionMenuTarget;
+    private actionMenuObjects;
+    private tooltip;
     private resources;
     private gameStats;
     private upgrades;
@@ -23,6 +26,8 @@ declare class BabyGame extends Phaser.Scene {
     private createBaby;
     private createHuman;
     private createFeedingStation;
+    private createToyBox;
+    private createChangingTable;
     private setupInput;
     private handlePlacement;
     private selectHuman;
@@ -31,6 +36,13 @@ declare class BabyGame extends Phaser.Scene {
     private assignBabyTask;
     private assignStationTask;
     private recruitHuman;
+    private buyItem;
+    private getItemDisplayName;
+    private showActionMenu;
+    private hideActionMenu;
+    private formatActionName;
+    private selectAction;
+    private getEntityKey;
     private displayHumanStatus;
     private updateGame;
     private updateHuman;
@@ -68,6 +80,9 @@ declare class BabyGame extends Phaser.Scene {
     private addCornerDecorations;
     private animateCryingBaby;
     private showNotification;
+    private showTooltip;
+    private hideTooltip;
+    private showBabyTooltip;
 }
 declare const config: {
     type: number;
