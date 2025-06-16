@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bird Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2C3E50;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 15px;
+            border: 2px solid #BDC3C7;
+            border-radius: 10px;
+            font-size: 16px;
+            resize: vertical;
+            margin-bottom: 15px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #3498DB;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #3498DB, #2980B9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .canvas-container {
+            margin-top: 30px;
+            border: 3px solid #ECF0F1;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #F8F9FA;
+        }
+        
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .bird-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #E8F6F3;
+            border-radius: 10px;
+            border-left: 5px solid #27AE60;
+        }
+        
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498DB;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐦 AI Bird Generator</h1>
+        <p>Describe a bird and watch it come to life!</p>
+        
+        <div class="input-section">
+            <textarea id="birdDescription" placeholder="Describe your dream bird... (e.g., 'A majestic blue bird with golden wings and a curved beak')"></textarea>
+            <button onclick="generateBird()">Generate Bird</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Creating your magical bird...</p>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="birdCanvas" width="600" height="400"></canvas>
+        </div>
+        
+        <div class="bird-info" id="birdInfo" style="display: none;">
+            <h3>Your Bird: <span id="birdName"></span></h3>
+            <p id="birdDetails"></p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('birdCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function generateBird() {
+            const description = document.getElementById('birdDescription').value.trim();
+            if (!description) {
+                alert('Please describe your bird first!');
+                return;
+            }
+            
+            showLoading(true);
+            
+            setTimeout(() => {
+                const birdData = parseBirdDescription(description);
+                drawBird(birdData);
+                showBirdInfo(birdData);
+                showLoading(false);
+            }, 1500);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function parseBirdDescription(description) {
+            const words = description.toLowerCase();
+            
+            const colors = {
+                red: '#E74C3C', blue: '#3498DB', green: '#27AE60', yellow: '#F1C40F',
+                orange: '#E67E22', purple: '#9B59B6', pink: '#E91E63', black: '#2C3E50',
+                white: '#ECF0F1', brown: '#8D6E63', gold: '#FFD700', silver: '#C0C0C0',
+                crimson: '#DC143C', azure: '#87CEEB', emerald: '#50C878', violet: '#8A2BE2',
+                turquoise: '#40E0D0', coral: '#FF7F50', indigo: '#4B0082', maroon: '#800000',
+                teal: '#008080', lime: '#00FF00', magenta: '#FF00FF', cyan: '#00FFFF'
+            };
+            
+            // Create a hash from the description for consistent randomization
+            let hash = 0;
+            for (let i = 0; i < description.length; i++) {
+                const char = description.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            
+            // Find colors mentioned in description
+            const foundColors = [];
+            for (const [colorName, colorValue] of Object.entries(colors)) {
+                if (words.includes(colorName)) {
+                    foundColors.push(colorValue);
+                }
+            }
+            
+            let primaryColor, secondaryColor;
+            
+            if (foundColors.length >= 2) {
+                primaryColor = foundColors[0];
+                secondaryColor = foundColors[1];
+            } else if (foundColors.length === 1) {
+                primaryColor = foundColors[0];
+                // Generate complementary color
+                secondaryColor = generateComplementaryColor(primaryColor);
+            } else {
+                // Use hash to pick consistent random colors
+                const colorValues = Object.values(colors);
+                primaryColor = colorValues[Math.abs(hash) % colorValues.length];
+                secondaryColor = colorValues[Math.abs(hash * 3) % colorValues.length];
+            }
+            
+            const size = words.includes('large') || words.includes('big') || words.includes('huge') || words.includes('giant') ? 'large' :
+                        words.includes('small') || words.includes('tiny') || words.includes('little') || words.includes('mini') ? 'small' : 'medium';
+            
+            const beakType = words.includes('curved') || words.includes('hooked') || words.includes('eagle') ? 'curved' :
+                            words.includes('long') || words.includes('pointed') || words.includes('sharp') ? 'long' : 'normal';
+            
+            const hasFeatherDetails = words.includes('feather') || words.includes('plume') || words.includes('crest') || 
+                                    words.includes('fluffy') || words.includes('ruffled');
+            const isMajestic = words.includes('majestic') || words.includes('elegant') || words.includes('royal') || 
+                              words.includes('magnificent') || words.includes('beautiful');
+            
+            // More varied characteristics
+            const hasLongTail = words.includes('peacock') || words.includes('long tail') || words.includes('flowing');
+            const isRound = words.includes('round') || words.includes('chubby') || words.includes('fat') || words.includes('owl');
+            const hasSpots = words.includes('spot') || words.includes('dot') || words.includes('speckle');
+            const hasStripes = words.includes('stripe') || words.includes('band') || words.includes('zebra');
+            
+            const birdNames = ['Skyweaver', 'Cloudwing', 'Featherbeam', 'Wingwhisper', 'Airglow', 'Stormchaser', 
+                              'Sunfeather', 'Moonwing', 'Starwhisper', 'Dreamsoar', 'Mistral', 'Aurora'];
+            const birdName = birdNames[Math.abs(hash * 7) % birdNames.length];
+            
+            return {
+                primaryColor,
+                secondaryColor,
+                size,
+                beakType,
+                hasFeatherDetails,
+                isMajestic,
+                hasLongTail,
+                isRound,
+                hasSpots,
+                hasStripes,
+                name: birdName,
+                description,
+                hash
+            };
+        }
+        
+        function generateComplementaryColor(hexColor) {
+            const hex = hexColor.replace('#', '');
+            const r = 255 - parseInt(hex.substr(0, 2), 16);
+            const g = 255 - parseInt(hex.substr(2, 2), 16);
+            const b = 255 - parseInt(hex.substr(4, 2), 16);
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+        
+        function drawBird(birdData) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            drawBackground();
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const sizeMultiplier = birdData.size === 'large' ? 1.4 : birdData.size === 'small' ? 0.6 : 1;
+            
+            // Adjust body shape based on characteristics
+            if (birdData.isRound) {
+                drawRoundBody(centerX, centerY, birdData, sizeMultiplier);
+            } else {
+                drawBody(centerX, centerY, birdData, sizeMultiplier);
+            }
+            
+            drawWings(centerX, centerY, birdData, sizeMultiplier);
+            drawHead(centerX, centerY - 40 * sizeMultiplier, birdData, sizeMultiplier);
+            drawBeak(centerX + 35 * sizeMultiplier, centerY - 40 * sizeMultiplier, birdData, sizeMultiplier);
+            drawEye(centerX + 15 * sizeMultiplier, centerY - 45 * sizeMultiplier, sizeMultiplier);
+            
+            if (birdData.hasLongTail) {
+                drawLongTail(centerX - 60 * sizeMultiplier, centerY, birdData, sizeMultiplier);
+            } else {
+                drawTail(centerX - 60 * sizeMultiplier, centerY, birdData, sizeMultiplier);
+            }
+            
+            drawLegs(centerX, centerY + 40 * sizeMultiplier, sizeMultiplier);
+            
+            if (birdData.hasFeatherDetails) {
+                drawFeatherDetails(centerX, centerY, birdData, sizeMultiplier);
+            }
+            
+            if (birdData.hasSpots) {
+                drawSpots(centerX, centerY, birdData, sizeMultiplier);
+            }
+            
+            if (birdData.hasStripes) {
+                drawStripes(centerX, centerY, birdData, sizeMultiplier);
+            }
+        }
+        
+        function drawBackground() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#E0F6FF');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawClouds();
+        }
+        
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 3; i++) {
+                const x = (i + 1) * 150;
+                const y = 50 + i * 20;
+                drawCloud(x, y, 30);
+            }
+        }
+        
+        function drawCloud(x, y, radius) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.arc(x + 25, y, radius * 0.8, 0, Math.PI * 2);
+            ctx.arc(x + 50, y, radius, 0, Math.PI * 2);
+            ctx.arc(x + 25, y - 20, radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawBody(x, y, birdData, size) {
+            ctx.fillStyle = birdData.primaryColor;
+            ctx.beginPath();
+            ctx.ellipse(x, y, 50 * size, 35 * size, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = darkenColor(birdData.primaryColor);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        function drawWings(x, y, birdData, size) {
+            ctx.fillStyle = birdData.secondaryColor;
+            
+            ctx.beginPath();
+            ctx.ellipse(x - 20 * size, y - 10 * size, 40 * size, 25 * size, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.ellipse(x + 20 * size, y - 10 * size, 40 * size, 25 * size, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = darkenColor(birdData.secondaryColor);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+        
+        function drawHead(x, y, birdData, size) {
+            ctx.fillStyle = birdData.primaryColor;
+            ctx.beginPath();
+            ctx.arc(x, y, 25 * size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = darkenColor(birdData.primaryColor);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        function drawBeak(x, y, birdData, size) {
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            
+            if (birdData.beakType === 'curved') {
+                ctx.arc(x, y, 15 * size, 0, Math.PI, false);
+            } else if (birdData.beakType === 'long') {
+                ctx.moveTo(x, y - 5 * size);
+                ctx.lineTo(x + 25 * size, y);
+                ctx.lineTo(x, y + 5 * size);
+            } else {
+                ctx.moveTo(x, y - 8 * size);
+                ctx.lineTo(x + 15 * size, y);
+                ctx.lineTo(x, y + 8 * size);
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#FF8C00';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+        
+        function drawEye(x, y, size) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(x, y, 8 * size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(x, y, 5 * size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(x + 2 * size, y - 2 * size, 2 * size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawTail(x, y, birdData, size) {
+            ctx.fillStyle = birdData.secondaryColor;
+            for (let i = 0; i < 3; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x - i * 15 * size, y + i * 10 * size, 30 * size, 8 * size, -0.5 - i * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawLegs(x, y, size) {
+            ctx.strokeStyle = '#FFA500';
+            ctx.lineWidth = 3 * size;
+            
+            ctx.beginPath();
+            ctx.moveTo(x - 10 * size, y);
+            ctx.lineTo(x - 10 * size, y + 20 * size);
+            ctx.moveTo(x + 10 * size, y);
+            ctx.lineTo(x + 10 * size, y + 20 * size);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(x - 10 * size, y + 20 * size);
+            ctx.lineTo(x - 15 * size, y + 25 * size);
+            ctx.moveTo(x - 10 * size, y + 20 * size);
+            ctx.lineTo(x - 5 * size, y + 25 * size);
+            ctx.moveTo(x - 10 * size, y + 20 * size);
+            ctx.lineTo(x - 10 * size, y + 25 * size);
+            
+            ctx.moveTo(x + 10 * size, y + 20 * size);
+            ctx.lineTo(x + 15 * size, y + 25 * size);
+            ctx.moveTo(x + 10 * size, y + 20 * size);
+            ctx.lineTo(x + 5 * size, y + 25 * size);
+            ctx.moveTo(x + 10 * size, y + 20 * size);
+            ctx.lineTo(x + 10 * size, y + 25 * size);
+            ctx.stroke();
+        }
+        
+        function drawRoundBody(x, y, birdData, size) {
+            ctx.fillStyle = birdData.primaryColor;
+            ctx.beginPath();
+            ctx.arc(x, y, 45 * size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = darkenColor(birdData.primaryColor);
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+        
+        function drawLongTail(x, y, birdData, size) {
+            ctx.fillStyle = birdData.secondaryColor;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x - i * 20 * size, y + i * 8 * size, 40 * size, 6 * size, -0.3 - i * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = lightenColor(birdData.secondaryColor);
+                ctx.beginPath();
+                ctx.ellipse(x - i * 20 * size, y + i * 8 * size, 35 * size, 4 * size, -0.3 - i * 0.15, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = birdData.secondaryColor;
+            }
+        }
+        
+        function drawSpots(x, y, birdData, size) {
+            ctx.fillStyle = darkenColor(birdData.primaryColor);
+            const numSpots = 8 + Math.floor(Math.abs(birdData.hash) % 5);
+            
+            for (let i = 0; i < numSpots; i++) {
+                const spotX = x + (Math.sin(birdData.hash * i) * 40 * size);
+                const spotY = y + (Math.cos(birdData.hash * i * 1.5) * 25 * size);
+                const spotSize = 2 + (Math.abs(birdData.hash * i) % 4) * size;
+                
+                ctx.beginPath();
+                ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function drawStripes(x, y, birdData, size) {
+            ctx.strokeStyle = darkenColor(birdData.primaryColor);
+            ctx.lineWidth = 3 * size;
+            
+            for (let i = 0; i < 4; i++) {
+                const stripeY = y - 20 * size + i * 10 * size;
+                ctx.beginPath();
+                ctx.moveTo(x - 40 * size, stripeY);
+                ctx.lineTo(x + 40 * size, stripeY);
+                ctx.stroke();
+            }
+        }
+        
+        function drawFeatherDetails(x, y, birdData, size) {
+            ctx.fillStyle = lightenColor(birdData.primaryColor);
+            const numFeathers = 5 + Math.floor(Math.abs(birdData.hash) % 3);
+            
+            for (let i = 0; i < numFeathers; i++) {
+                const featherX = x - 30 * size + i * (60 * size / numFeathers);
+                const featherY = y - 20 * size + (Math.sin(birdData.hash * i) * 10 * size);
+                const rotation = Math.sin(birdData.hash * i * 2) * 0.5;
+                
+                ctx.beginPath();
+                ctx.ellipse(featherX, featherY, 3 * size, 12 * size, rotation, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function darkenColor(color) {
+            const hex = color.replace('#', '');
+            const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - 30);
+            const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - 30);
+            const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - 30);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        function lightenColor(color) {
+            const hex = color.replace('#', '');
+            const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + 40);
+            const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + 40);
+            const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + 40);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        function showBirdInfo(birdData) {
+            document.getElementById('birdName').textContent = birdData.name;
+            document.getElementById('birdDetails').textContent = 
+                `This magnificent ${birdData.size} bird features ${birdData.primaryColor} plumage with ${birdData.secondaryColor} wing details. ` +
+                `It has a ${birdData.beakType} beak and ${birdData.hasFeatherDetails ? 'intricate feather patterns' : 'smooth feathers'}. ` +
+                `${birdData.isMajestic ? 'A truly majestic creature!' : 'A beautiful bird!'}`;
+            document.getElementById('birdInfo').style.display = 'block';
+        }
+        
+        drawBird({
+            primaryColor: '#3498DB',
+            secondaryColor: '#2980B9',
+            size: 'medium',
+            beakType: 'normal',
+            hasFeatherDetails: false,
+            isMajestic: false,
+            name: 'Example Bird',
+            description: 'Welcome bird'
+        });
+    </script>
+</body>
+</html>
